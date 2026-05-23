@@ -470,14 +470,18 @@ export default function BlockedDatesManagement() {
               <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-5 space-y-3 relative overflow-hidden">
                 <div className="absolute right-4 top-4 text-zinc-800 font-mono font-bold text-5xl select-none pointer-events-none opacity-40">
                   {(() => {
-                    const start = new Date(selectedPreviewBlock.startDate);
-                    const end = new Date(selectedPreviewBlock.endDate);
-                    // Normalize both dates to midnight in UTC timezone to prevent any hour offset anomalies (such as 23:59:59 time limits)
-                    const startMidnight = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
-                    const endMidnight = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+                    const startStr = selectedPreviewBlock.startDate.substring(0, 10);
+                    const endStr = selectedPreviewBlock.endDate.substring(0, 10);
+                    const [sYear, sMonth, sDay] = startStr.split("-").map(Number);
+                    const [eYear, eMonth, eDay] = endStr.split("-").map(Number);
+                    
+                    // Parse midnight timestamps in UTC timezone (immune to local client timezone shifts)
+                    const startMidnight = Date.UTC(sYear, sMonth - 1, sDay);
+                    const endMidnight = Date.UTC(eYear, eMonth - 1, eDay);
+                    
                     const diff = Math.abs(endMidnight - startMidnight);
-                    const days = Math.round(diff / (1000 * 60 * 60 * 24)) + 1;
-                    return `${days}d`;
+                    const daysGap = Math.round(diff / (1000 * 60 * 60 * 24));
+                    return `${daysGap}d`;
                   })()}
                 </div>
                 

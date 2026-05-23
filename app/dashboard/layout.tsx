@@ -11,7 +11,8 @@ import {
   Menu, 
   X,
   ExternalLink,
-  Crown
+  Crown,
+  Calendar
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -74,6 +75,7 @@ export default function DashboardLayout({
     { name: "Overview", href: "/dashboard", icon: Home },
     { name: "Bookings", href: "/dashboard/bookings", icon: CalendarDays },
     { name: "Blocked Dates", href: "/dashboard/blocked-dates", icon: CalendarOff },
+    { name: "Calendar View", href: "/dashboard/calendar", icon: Calendar },
   ];
 
   return (

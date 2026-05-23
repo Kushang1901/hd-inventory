@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { connectToDatabase } from "@/lib/db";
-import { Booking, BlockedDate } from "@/lib/models/schema";
+import { Booking, BlockedDate, RoomPrice } from "@/lib/models/schema";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
@@ -15,8 +15,20 @@ const razorpay = new Razorpay({
 });
 
 // Price lookup helper (Dynamic lookup on server side for safety)
-function getRoomRate(roomType: string, subtype: string): number {
+async function getRoomRate(roomType: string, subtype: string): Promise<number> {
   const isAC = subtype.includes("AC") && !subtype.includes("Non-AC");
+  const subtypeNormalized = isAC ? "AC" : "Non-AC";
+  
+  try {
+    const record = await RoomPrice.findOne({ roomType, subtype: subtypeNormalized });
+    if (record) {
+      return record.price;
+    }
+  } catch (err) {
+    console.error("Error querying RoomPrice database collection:", err);
+  }
+
+  // Fallbacks:
   switch (roomType) {
     case "Standard":
       return isAC ? 1500 : 1200;
@@ -161,7 +173,7 @@ export async function POST(request: Request) {
         }, { status: 400 }));
       }
 
-      const baseRate = getRoomRate(roomType, selectedSubtype);
+      const baseRate = await getRoomRate(roomType, selectedSubtype);
       const mattressCount = (guests > 2 && roomType !== "Standard") ? (guests - 2) : 0;
       const rate = baseRate + (mattressCount * 350);
       computedTotalAmount += rate * quantity * nights;

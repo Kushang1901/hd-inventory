@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectToDatabase } from "@/lib/db";
-import { Booking } from "@/lib/models/schema";
+import { Booking, RoomPrice } from "@/lib/models/schema";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
@@ -10,8 +10,20 @@ export async function OPTIONS() {
 
 
 // Price lookup helper (server-side safety verification)
-function getRoomRate(roomType: string, subtype: string): number {
+async function getRoomRate(roomType: string, subtype: string): Promise<number> {
   const isAC = subtype.includes("AC") && !subtype.includes("Non-AC");
+  const subtypeNormalized = isAC ? "AC" : "Non-AC";
+  
+  try {
+    const record = await RoomPrice.findOne({ roomType, subtype: subtypeNormalized });
+    if (record) {
+      return record.price;
+    }
+  } catch (err) {
+    console.error("Error querying RoomPrice database collection:", err);
+  }
+
+  // Fallbacks:
   switch (roomType) {
     case "Standard":
       return isAC ? 1500 : 1200;
@@ -196,8 +208,8 @@ export async function POST(request: Request) {
     const timeDiff = Math.abs(checkOut.getTime() - checkIn.getTime());
     const nights = Math.round(timeDiff / (1000 * 60 * 60 * 24));
 
-    const roomDetailsForSave = rooms.map((room: any) => {
-      const baseRate = getRoomRate(room.roomType, room.selectedSubtype);
+    const roomDetailsForSave = await Promise.all(rooms.map(async (room: any) => {
+      const baseRate = await getRoomRate(room.roomType, room.selectedSubtype);
       const mattressCount = (room.guests > 2 && room.roomType !== "Standard") ? (room.guests - 2) : 0;
       const rate = baseRate + (mattressCount * 350);
       calculatedTotal += rate * room.quantity * nights;
@@ -210,7 +222,7 @@ export async function POST(request: Request) {
         extraMattress: room.guests > 2,
         pricePerNight: rate
       };
-    });
+    }));
 
     const advancePaid = Math.round(calculatedTotal * 0.5);
     const balanceDue = calculatedTotal - advancePaid;

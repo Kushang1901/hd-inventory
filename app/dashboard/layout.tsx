@@ -12,7 +12,8 @@ import {
   X,
   ExternalLink,
   Crown,
-  Calendar
+  Calendar,
+  Coins
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -76,6 +77,7 @@ export default function DashboardLayout({
     { name: "Bookings", href: "/dashboard/bookings", icon: CalendarDays },
     { name: "Blocked Dates", href: "/dashboard/blocked-dates", icon: CalendarOff },
     { name: "Calendar View", href: "/dashboard/calendar", icon: Calendar },
+    { name: "Set Price", href: "/dashboard/set-price", icon: Coins },
   ];
 
   return (
@@ -132,15 +134,7 @@ export default function DashboardLayout({
             );
           })}
 
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300 border border-transparent transition-all duration-200"
-          >
-            <ExternalLink className="h-4.5 w-4.5" />
-            <span>Booking Page</span>
-          </a>
+          {/* Custom Set Price item is now dynamically mapped inside menuItems */}
         </nav>
 
         {/* Log Out */}
@@ -207,13 +201,6 @@ export default function DashboardLayout({
                     </Link>
                   );
                 })}
-                <a
-                  href="/"
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
-                >
-                  <ExternalLink className="h-5 w-5" />
-                  <span>Public Booking</span>
-                </a>
               </nav>
 
               <div className="border-t border-zinc-800 pt-4 mt-6">

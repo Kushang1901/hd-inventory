@@ -30,29 +30,52 @@ export default function CalendarDashboard() {
     "Suite": 2
   };
 
-  const roomRates = {
+  const [roomRates, setRoomRates] = useState<any>({
     "Standard": [{ name: "AC Room", price: 1500 }, { name: "Non-AC Room", price: 1200 }],
     "Deluxe": [{ name: "AC Room", price: 1700 }, { name: "Non-AC Room", price: 1400 }],
     "Super Deluxe": [{ name: "AC Room", price: 1900 }, { name: "Non-AC Room", price: 1600 }],
     "Suite": [{ name: "AC Room", price: 3000 }]
-  };
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [bookingsRes, blocksRes] = await Promise.all([
+        const [bookingsRes, blocksRes, pricesRes] = await Promise.all([
           fetch("/api/bookings"),
-          fetch("/api/blocked-dates")
+          fetch("/api/blocked-dates"),
+          fetch("/api/room-prices")
         ]);
         
         const bookingsData = await bookingsRes.json();
         const blocksData = await blocksRes.json();
+        const pricesData = await pricesRes.json();
 
         if (bookingsData.success) {
           setBookings(bookingsData.data || []);
         }
         if (blocksData.success) {
           setBlockedDates(blocksData.data || []);
+        }
+        if (pricesData.success && Array.isArray(pricesData.prices)) {
+          const formatted: any = {
+            "Standard": [{ name: "AC Room", price: 1500 }, { name: "Non-AC Room", price: 1200 }],
+            "Deluxe": [{ name: "AC Room", price: 1700 }, { name: "Non-AC Room", price: 1400 }],
+            "Super Deluxe": [{ name: "AC Room", price: 1900 }, { name: "Non-AC Room", price: 1600 }],
+            "Suite": [{ name: "AC Room", price: 3000 }]
+          };
+          
+          pricesData.prices.forEach((item: any) => {
+            const { roomType, subtype, price } = item;
+            if (formatted[roomType]) {
+              const subIndex = formatted[roomType].findIndex((s: any) => s.name.startsWith(subtype));
+              if (subIndex > -1) {
+                formatted[roomType][subIndex].price = price;
+              } else if (subtype === "AC") {
+                formatted[roomType][0].price = price;
+              }
+            }
+          });
+          setRoomRates(formatted);
         }
       } catch (err) {
         console.error("Failed to load calendar data", err);

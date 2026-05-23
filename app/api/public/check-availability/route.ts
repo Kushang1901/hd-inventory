@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
-import { Booking, BlockedDate } from "@/lib/models/schema";
+import { Booking, BlockedDate, RoomPrice } from "@/lib/models/schema";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
@@ -93,15 +93,21 @@ export async function GET(request: Request) {
       }
     });
 
-    // 4. Room Configuration Details (Zero Hardcoded values in frontend)
+    // 4. Room Configuration Details - Dynamically queried from MongoDB
+    const dbPrices = await RoomPrice.find({});
+    const getDbPrice = (roomType: string, subtype: string, defaultVal: number) => {
+      const match = dbPrices.find(p => p.roomType === roomType && p.subtype === subtype);
+      return match ? match.price : defaultVal;
+    };
+
     const roomTypesMetadata = [
       {
         id: "Standard",
         name: "Standard Room",
         maxPersons: 2,
         subtypes: [
-          { name: "AC Room", code: "AC", price: 1500 },
-          { name: "Non-AC Room", code: "Non-AC", price: 1200 }
+          { name: "AC Room", code: "AC", price: getDbPrice("Standard", "AC", 1500) },
+          { name: "Non-AC Room", code: "Non-AC", price: getDbPrice("Standard", "Non-AC", 1200) }
         ]
       },
       {
@@ -109,8 +115,8 @@ export async function GET(request: Request) {
         name: "Deluxe Room",
         maxPersons: 5,
         subtypes: [
-          { name: "AC Room", code: "AC", price: 1700 },
-          { name: "Non-AC Room", code: "Non-AC", price: 1400 }
+          { name: "AC Room", code: "AC", price: getDbPrice("Deluxe", "AC", 1700) },
+          { name: "Non-AC Room", code: "Non-AC", price: getDbPrice("Deluxe", "Non-AC", 1400) }
         ]
       },
       {
@@ -118,8 +124,8 @@ export async function GET(request: Request) {
         name: "Super Deluxe Room",
         maxPersons: 5,
         subtypes: [
-          { name: "AC Room", code: "AC", price: 1900 },
-          { name: "Non-AC Room", code: "Non-AC", price: 1600 }
+          { name: "AC Room", code: "AC", price: getDbPrice("Super Deluxe", "AC", 1900) },
+          { name: "Non-AC Room", code: "Non-AC", price: getDbPrice("Super Deluxe", "Non-AC", 1600) }
         ]
       },
       {
@@ -127,7 +133,7 @@ export async function GET(request: Request) {
         name: "Suite Room",
         maxPersons: 5,
         subtypes: [
-          { name: "AC Room", code: "AC", price: 3000 }
+          { name: "AC Room", code: "AC", price: getDbPrice("Suite", "AC", 3000) }
         ]
       }
     ];

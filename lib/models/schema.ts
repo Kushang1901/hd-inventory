@@ -96,3 +96,22 @@ const BlockedDateSchema = new Schema<IBlockedDate>({
 // Avoid model compilation error during Next.js serverless route re-loads
 export const Booking = mongoose.models.Booking || mongoose.model<IBooking>("Booking", BookingSchema);
 export const BlockedDate = mongoose.models.BlockedDate || mongoose.model<IBlockedDate>("BlockedDate", BlockedDateSchema);
+
+// Dynamic Room Pricing Model
+export interface IRoomPrice extends Document {
+  roomType: string;      // "Standard", "Deluxe", "Super Deluxe", "Suite"
+  subtype: string;       // "AC", "Non-AC"
+  price: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const RoomPriceSchema = new Schema<IRoomPrice>({
+  roomType: { type: String, required: true },
+  subtype: { type: String, required: true },
+  price: { type: Number, required: true }
+}, {
+  timestamps: true
+});
+
+export const RoomPrice = mongoose.models.RoomPrice || mongoose.model<IRoomPrice>("RoomPrice", RoomPriceSchema);

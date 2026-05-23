@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     }
 
     // Verify signature
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || "rkpHwK2w8V4TTQkzWtTlsYRq";
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || "v6imB5yBH8SYt0FlVj5yE3oc";
     const text = `${razorpay_order_id}|${razorpay_payment_id}`;
     const generatedSignature = crypto
       .createHmac("sha256", keySecret)

@@ -10,8 +10,8 @@ export async function OPTIONS() {
 
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_live_Ssr4UnDlzQlQa4",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "v6imB5yBH8SYt0FlVj5yE3oc"
+  key_id: process.env.RAZORPAY_KEY_ID || "rzp_live_SsrjT2eFY7oLhR",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "prfL6Ukue8SXh2D2OrMPODzL"
 });
 
 // Price lookup helper (Dynamic lookup on server side for safety)
@@ -185,7 +185,7 @@ export async function POST(request: Request) {
 
     return corsResponse(NextResponse.json({
       success: true,
-      keyId: process.env.RAZORPAY_KEY_ID || "rzp_live_Ssr4UnDlzQlQa4",
+      keyId: process.env.RAZORPAY_KEY_ID || "rzp_live_SsrjT2eFY7oLhR",
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,

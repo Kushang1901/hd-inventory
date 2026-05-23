@@ -95,33 +95,8 @@ export default function BlockedDatesManagement() {
       const endEl = document.getElementById("endDate");
       
       if (startEl && endEl) {
-        // Auto-slash date formatting while typing helper
-        const setupAutoSlash = (element: any) => {
-          if (!element) return;
-          element.addEventListener("input", (e: any) => {
-            let value = e.target.value;
-            let clean = value.replace(/\D/g, "");
-            if (clean.length > 8) {
-              clean = clean.slice(0, 8);
-            }
-            let formatted = "";
-            if (clean.length > 0) {
-              formatted += clean.slice(0, 2);
-            }
-            if (clean.length > 2) {
-              formatted += "/" + clean.slice(2, 4);
-            }
-            if (clean.length > 4) {
-              formatted += "/" + clean.slice(4, 8);
-            }
-            e.target.value = formatted;
-          });
-        };
-
         const startPicker = fp(startEl, {
           dateFormat: "Y-m-d",
-          altInput: true,
-          altFormat: "d/m/Y",
           allowInput: true,
           defaultDate: startDate || undefined,
           minDate: "today",
@@ -137,8 +112,6 @@ export default function BlockedDatesManagement() {
         
         const endPicker = fp(endEl, {
           dateFormat: "Y-m-d",
-          altInput: true,
-          altFormat: "d/m/Y",
           allowInput: true,
           defaultDate: endDate || undefined,
           minDate: startDate || "today",
@@ -147,9 +120,6 @@ export default function BlockedDatesManagement() {
           }
         });
 
-        // Setup auto slash formatting
-        if (startPicker.altInput) setupAutoSlash(startPicker.altInput);
-        if (endPicker.altInput) setupAutoSlash(endPicker.altInput);
       }
     };
 

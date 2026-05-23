@@ -9,7 +9,9 @@ import {
   Calendar,
   Layers,
   HelpCircle,
-  Pencil
+  Pencil,
+  X,
+  Clock
 } from "lucide-react";
 
 export default function BlockedDatesManagement() {
@@ -30,6 +32,7 @@ export default function BlockedDatesManagement() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [selectedPreviewBlock, setSelectedPreviewBlock] = useState<any | null>(null);
 
   const fetchBlocks = async () => {
     try {
@@ -368,7 +371,12 @@ export default function BlockedDatesManagement() {
                   </thead>
                   <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
                     {blocks.map((b) => (
-                      <tr key={b._id} className="hover:bg-zinc-900/10 transition-colors">
+                      <tr 
+                        key={b._id} 
+                        className="hover:bg-zinc-900/20 hover:cursor-pointer transition-colors"
+                        onClick={() => setSelectedPreviewBlock(b)}
+                        title="Click to view full block details"
+                      >
                         <td className="px-6 py-4">
                           <div className="font-semibold text-white">
                             {new Date(b.startDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
@@ -393,7 +401,8 @@ export default function BlockedDatesManagement() {
                         </td>
                         <td className="px-6 py-4 text-right flex justify-end gap-1">
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setStartDate(b.startDate.split("T")[0]);
                               setEndDate(b.endDate.split("T")[0]);
                               setRoomType(b.roomType);
@@ -407,7 +416,10 @@ export default function BlockedDatesManagement() {
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleRemoveBlock(b._id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveBlock(b._id);
+                            }}
                             className="rounded p-2 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer"
                             title="Remove date block"
                           >
@@ -423,6 +435,151 @@ export default function BlockedDatesManagement() {
           )}
         </div>
       </div>
+
+      {/* Block Preview Modal */}
+      {selectedPreviewBlock && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md transition-opacity duration-300"
+          onClick={() => setSelectedPreviewBlock(null)}
+        >
+          <div 
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scaleUp text-sm text-zinc-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Decorative background glow */}
+            <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-gradient-to-br from-amber-500/10 to-red-600/10 blur-xl pointer-events-none"></div>
+            
+            {/* Header */}
+            <div className="border-b border-zinc-800/80 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-serif text-white font-semibold flex items-center gap-2">
+                <CalendarOff className="h-5 w-5 text-amber-500" />
+                <span>Date Block Specifications</span>
+              </h3>
+              <button 
+                onClick={() => setSelectedPreviewBlock(null)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-6">
+              
+              {/* Date Highlight Box */}
+              <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-5 space-y-3 relative overflow-hidden">
+                <div className="absolute right-4 top-4 text-zinc-800 font-mono font-bold text-5xl select-none pointer-events-none opacity-40">
+                  {(() => {
+                    const start = new Date(selectedPreviewBlock.startDate);
+                    const end = new Date(selectedPreviewBlock.endDate);
+                    const diff = Math.abs(end.getTime() - start.getTime());
+                    const days = Math.round(diff / (1000 * 60 * 60 * 24)) + 1;
+                    return `${days}d`;
+                  })()}
+                </div>
+                
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500/80 block">Blocked Duration</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block uppercase font-semibold">Check-In</span>
+                    <span className="font-semibold text-white text-base">
+                      {new Date(selectedPreviewBlock.startDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" })}
+                    </span>
+                  </div>
+                  <div className="hidden sm:block text-zinc-600 font-serif text-xl select-none">➔</div>
+                  <div>
+                    <span className="text-[10px] text-zinc-500 block uppercase font-semibold">Check-Out</span>
+                    <span className="font-semibold text-white text-base">
+                      {new Date(selectedPreviewBlock.endDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scope Card */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500/80 block">Scope of Restriction</span>
+                <div className="flex items-center gap-3">
+                  <span 
+                    className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
+                      selectedPreviewBlock.roomType === "All" 
+                        ? "bg-red-500/10 text-red-400 border-red-500/20" 
+                        : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                    }`}
+                  >
+                    {selectedPreviewBlock.roomType === "All" ? "Entire Hotel Blocked" : `${selectedPreviewBlock.roomType} Rooms Blocked`}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  {selectedPreviewBlock.roomType === "All" 
+                    ? "All rooms and classifications (Standard, Deluxe, Super Deluxe, Suite) are completely locked. Guests cannot select check-in dates matching this window."
+                    : `Only the ${selectedPreviewBlock.roomType} room category is restricted. Other room categories remain open and searchable on public booking wizards.`}
+                </p>
+              </div>
+
+              {/* Reason card */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500/80 block">Reason / Administrative Notes</span>
+                <div className="rounded-xl border border-amber-500/10 bg-amber-500/5 p-4 italic text-zinc-300 relative min-h-[60px]">
+                  <span className="absolute left-2 top-0 text-amber-500/20 text-4xl select-none font-serif leading-none">“</span>
+                  <p className="pl-4 py-1 text-zinc-300 leading-relaxed font-serif text-sm">
+                    {selectedPreviewBlock.reason || "No specific reason or administrative notes were registered for this block window."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Audit info */}
+              {selectedPreviewBlock.createdAt && (
+                <div className="flex items-center gap-1.5 text-zinc-500 text-[10px]">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Registered: {new Date(selectedPreviewBlock.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer controls */}
+            <div className="border-t border-zinc-800/80 px-6 py-4 bg-zinc-950/50 flex flex-wrap gap-2 items-center justify-between">
+              <button
+                onClick={() => {
+                  const id = selectedPreviewBlock._id;
+                  setSelectedPreviewBlock(null);
+                  handleRemoveBlock(id);
+                }}
+                className="rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold px-4 py-2.5 transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Lift Block</span>
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setStartDate(selectedPreviewBlock.startDate.split("T")[0]);
+                    setEndDate(selectedPreviewBlock.endDate.split("T")[0]);
+                    setRoomType(selectedPreviewBlock.roomType);
+                    setReason(selectedPreviewBlock.reason || "");
+                    setEditingBlockId(selectedPreviewBlock._id);
+                    setSelectedPreviewBlock(null);
+                    document.getElementById("block-form-card")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="rounded-lg border border-zinc-700 bg-zinc-900/40 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold px-4 py-2.5 transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span>Edit Block</span>
+                </button>
+                
+                <button
+                  onClick={() => setSelectedPreviewBlock(null)}
+                  className="rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs px-5 py-2.5 transition cursor-pointer active:scale-95"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

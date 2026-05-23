@@ -20,12 +20,8 @@ export async function GET(request: Request) {
       return corsResponse(NextResponse.json({ success: false, error: "Missing checkIn or checkOut dates" }, { status: 400 }));
     }
 
-    const checkIn = new Date(checkInStr);
-    const checkOut = new Date(checkOutStr);
-    
-    // Normalize dates (start of check-in, end of check-out)
-    checkIn.setHours(0, 0, 0, 0);
-    checkOut.setHours(23, 59, 59, 999);
+    const checkIn = new Date(checkInStr.split("T")[0] + "T00:00:00.000Z");
+    const checkOut = new Date(checkOutStr.split("T")[0] + "T00:00:00.000Z");
 
     if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
       return corsResponse(NextResponse.json({ success: false, error: "Invalid date format" }, { status: 400 }));
@@ -33,6 +29,14 @@ export async function GET(request: Request) {
 
     if (checkIn >= checkOut) {
       return corsResponse(NextResponse.json({ success: false, error: "Check-out date must be after check-in" }, { status: 400 }));
+    }
+
+    // Enforce 3-month rolling booking window limit
+    const maxFutureDate = new Date();
+    maxFutureDate.setUTCMonth(maxFutureDate.getUTCMonth() + 3);
+    maxFutureDate.setUTCHours(23, 59, 59, 999);
+    if (checkIn > maxFutureDate) {
+      return corsResponse(NextResponse.json({ success: false, error: "Bookings are only allowed within the next 3 months." }, { status: 400 }));
     }
 
     // 1. Fetch blocked dates overlapping with the selected range

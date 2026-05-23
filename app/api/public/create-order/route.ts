@@ -41,14 +41,19 @@ export async function POST(request: Request) {
       return corsResponse(NextResponse.json({ success: false, error: "Missing required booking details" }, { status: 400 }));
     }
 
-    const checkIn = new Date(checkInStr);
-    const checkOut = new Date(checkOutStr);
-    
-    checkIn.setHours(0, 0, 0, 0);
-    checkOut.setHours(23, 59, 59, 999);
+    const checkIn = new Date(checkInStr.split("T")[0] + "T00:00:00.000Z");
+    const checkOut = new Date(checkOutStr.split("T")[0] + "T00:00:00.000Z");
 
     if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkIn >= checkOut) {
       return corsResponse(NextResponse.json({ success: false, error: "Invalid booking dates" }, { status: 400 }));
+    }
+
+    // Enforce 3-month rolling booking window limit
+    const maxFutureDate = new Date();
+    maxFutureDate.setUTCMonth(maxFutureDate.getUTCMonth() + 3);
+    maxFutureDate.setUTCHours(23, 59, 59, 999);
+    if (checkIn > maxFutureDate) {
+      return corsResponse(NextResponse.json({ success: false, error: "Bookings are only allowed within the next 3 months." }, { status: 400 }));
     }
 
     // Verify room dates are not blocked
@@ -67,7 +72,7 @@ export async function POST(request: Request) {
     // Validate rooms capacity and compute totals
     let computedTotalAmount = 0;
     const timeDiff = Math.abs(checkOut.getTime() - checkIn.getTime());
-    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    const nights = Math.round(timeDiff / (1000 * 60 * 60 * 24));
 
     for (const room of rooms) {
       const { roomType, selectedSubtype, quantity, guests, extraMattress } = room;
@@ -94,8 +99,8 @@ export async function POST(request: Request) {
       computedTotalAmount += rate * quantity * nights;
     }
 
-    // Generate Razorpay Order for the ₹1,000 advance
-    const advanceAmount = 1000; // in INR
+    // Generate Razorpay Order for the 50% advance booking payment
+    const advanceAmount = Math.round(computedTotalAmount * 0.5); // in INR
     
     const razorpayOptions = {
       amount: advanceAmount * 100, // in paise

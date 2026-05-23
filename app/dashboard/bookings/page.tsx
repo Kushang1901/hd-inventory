@@ -440,7 +440,7 @@ export default function BookingsManagement() {
                     </div>
                     <div className="flex justify-between text-emerald-700">
                       <span>Advance Received Online (Razorpay):</span>
-                      <span className="font-semibold">- ₹{selectedBooking.paidAmount >= 1000 ? selectedBooking.paidAmount : 1000}</span>
+                      <span className="font-semibold">- ₹{selectedBooking.paidAmount}</span>
                     </div>
                     
                     <div className="border-t border-double border-zinc-300 pt-2 flex justify-between text-xs font-bold text-red-950">

@@ -112,15 +112,21 @@ export async function POST(request: Request) {
       return corsResponse(NextResponse.json({ success: false, error: "Payment verification failed. Invalid signature." }, { status: 400 }));
     }
 
-    const checkIn = new Date(checkInStr);
-    const checkOut = new Date(checkOutStr);
-    checkIn.setHours(0, 0, 0, 0);
-    checkOut.setHours(23, 59, 59, 999);
+    const checkIn = new Date(checkInStr.split("T")[0] + "T00:00:00.000Z");
+    const checkOut = new Date(checkOutStr.split("T")[0] + "T00:00:00.000Z");
+
+    // Enforce 3-month rolling booking window limit
+    const maxFutureDate = new Date();
+    maxFutureDate.setUTCMonth(maxFutureDate.getUTCMonth() + 3);
+    maxFutureDate.setUTCHours(23, 59, 59, 999);
+    if (checkIn > maxFutureDate) {
+      return corsResponse(NextResponse.json({ success: false, error: "Bookings are only allowed within the next 3 months." }, { status: 400 }));
+    }
 
     // Dynamic price sheet calculations on server side (Zero-Tampering Security)
     let calculatedTotal = 0;
     const timeDiff = Math.abs(checkOut.getTime() - checkIn.getTime());
-    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    const nights = Math.round(timeDiff / (1000 * 60 * 60 * 24));
 
     const roomDetailsForSave = rooms.map((room: any) => {
       const baseRate = getRoomRate(room.roomType, room.selectedSubtype);
@@ -137,7 +143,7 @@ export async function POST(request: Request) {
       };
     });
 
-    const advancePaid = 1000;
+    const advancePaid = Math.round(calculatedTotal * 0.5);
     const balanceDue = calculatedTotal - advancePaid;
 
     // Generate Booking ID: HD-YYYYMMDD-[3 RANDOM DIGITS]

@@ -234,10 +234,10 @@ export default function BookingsManagement() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-xs">
-                        {new Date(b.checkIn).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        {new Date(b.checkIn).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
                       </div>
                       <div className="text-[10px] text-zinc-500 mt-0.5">
-                        to {new Date(b.checkOut).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        to {new Date(b.checkOut).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
                         <span className="ml-1 text-amber-500">({getNights(b.checkIn, b.checkOut)} Nights)</span>
                       </div>
                     </td>
@@ -385,9 +385,9 @@ export default function BookingsManagement() {
                       <div><span className="text-zinc-400">Contact:</span> <span className="font-semibold text-zinc-950">{selectedBooking.phone}</span></div>
                     </div>
                     <div className="space-y-1 text-right">
-                      <div><span className="text-zinc-400">Date Issued:</span> <span className="font-semibold text-zinc-950">{new Date(selectedBooking.createdAt).toLocaleDateString("en-US")}</span></div>
-                      <div><span className="text-zinc-400">Check-In:</span> <span className="font-semibold text-zinc-950">{new Date(selectedBooking.checkIn).toLocaleDateString("en-US")}</span></div>
-                      <div><span className="text-zinc-400">Check-Out:</span> <span className="font-semibold text-zinc-950">{new Date(selectedBooking.checkOut).toLocaleDateString("en-US")}</span></div>
+                      <div><span className="text-zinc-400">Date Issued:</span> <span className="font-semibold text-zinc-950">{new Date(selectedBooking.createdAt).toLocaleDateString("en-US", { timeZone: "UTC" })}</span></div>
+                      <div><span className="text-zinc-400">Check-In:</span> <span className="font-semibold text-zinc-950">{new Date(selectedBooking.checkIn).toLocaleDateString("en-US", { timeZone: "UTC" })}</span></div>
+                      <div><span className="text-zinc-400">Check-Out:</span> <span className="font-semibold text-zinc-950">{new Date(selectedBooking.checkOut).toLocaleDateString("en-US", { timeZone: "UTC" })}</span></div>
                     </div>
                   </div>
 

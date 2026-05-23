@@ -63,29 +63,33 @@ export default function CalendarDashboard() {
     fetchData();
   }, []);
 
-  // Helper: Normalize date to start of day in local timezone
-  const normalizeDate = (d: Date) => {
+  // Helper: Normalize local date to UTC midnight timestamp
+  const normalizeLocalDate = (d: Date) => {
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  };
+
+  // Helper: Normalize DB UTC date to UTC midnight timestamp
+  const normalizeDbDate = (d: string | Date) => {
     const date = new Date(d);
-    date.setHours(0, 0, 0, 0);
-    return date.getTime();
+    return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
   };
 
   // Helper: Get data for a specific date
   const getDateStats = (date: Date) => {
-    const targetTime = normalizeDate(date);
+    const targetTime = normalizeLocalDate(date);
 
     // 1. Find overlapping bookings for this date (where checkIn <= date && checkOut > date)
     const dailyBookings = bookings.filter((b) => {
       if (b.bookingStatus === "Cancelled") return false;
-      const checkInTime = normalizeDate(new Date(b.checkIn));
-      const checkOutTime = normalizeDate(new Date(b.checkOut));
+      const checkInTime = normalizeDbDate(b.checkIn);
+      const checkOutTime = normalizeDbDate(b.checkOut);
       return targetTime >= checkInTime && targetTime < checkOutTime;
     });
 
     // 2. Find overlapping blocks for this date (where startDate <= date && endDate >= date)
     const dailyBlocks = blockedDates.filter((block) => {
-      const startTime = normalizeDate(new Date(block.startDate));
-      const endTime = normalizeDate(new Date(block.endDate));
+      const startTime = normalizeDbDate(block.startDate);
+      const endTime = normalizeDbDate(block.endDate);
       return targetTime >= startTime && targetTime <= endTime;
     });
 

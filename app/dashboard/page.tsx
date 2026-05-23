@@ -191,7 +191,7 @@ export default function DashboardHome() {
                       <span className="text-[9px] font-mono bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded text-amber-400">{b.bookingId}</span>
                     </div>
                     <p className="text-xs text-zinc-500 font-sans">
-                      {b.roomType} &bull; Check-in: {new Date(b.checkIn).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      {b.roomType} &bull; Check-in: {new Date(b.checkIn).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
                     </p>
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-6">

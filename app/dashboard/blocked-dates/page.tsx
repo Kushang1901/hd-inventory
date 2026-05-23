@@ -472,7 +472,10 @@ export default function BlockedDatesManagement() {
                   {(() => {
                     const start = new Date(selectedPreviewBlock.startDate);
                     const end = new Date(selectedPreviewBlock.endDate);
-                    const diff = Math.abs(end.getTime() - start.getTime());
+                    // Normalize both dates to midnight in UTC timezone to prevent any hour offset anomalies (such as 23:59:59 time limits)
+                    const startMidnight = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+                    const endMidnight = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+                    const diff = Math.abs(endMidnight - startMidnight);
                     const days = Math.round(diff / (1000 * 60 * 60 * 24)) + 1;
                     return `${days}d`;
                   })()}

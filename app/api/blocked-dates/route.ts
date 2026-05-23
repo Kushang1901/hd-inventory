@@ -37,12 +37,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Start date and end date are required" }, { status: 400 });
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    // Normalize to start of day
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
+    // Normalize to UTC start and end of day to prevent local timezone shifts
+    const start = new Date(startDate.split("T")[0] + "T00:00:00.000Z");
+    const end = new Date(endDate.split("T")[0] + "T23:59:59.999Z");
 
     if (start > end) {
       return NextResponse.json({ success: false, error: "Start date must be before or equal to end date" }, { status: 400 });
@@ -62,6 +59,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+// PUT: Update an existing blocked date range
+export async function PUT(request: Request) {
+  try {
+    if (!(await isAdmin())) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    await connectToDatabase();
+    const { id, startDate, endDate, roomType, reason } = await request.json();
+
+    if (!id || !startDate || !endDate) {
+      return NextResponse.json({ success: false, error: "Block ID, start date, and end date are required" }, { status: 400 });
+    }
+
+    // Normalize to UTC to prevent day-shift bugs
+    const start = new Date(startDate.split("T")[0] + "T00:00:00.000Z");
+    const end = new Date(endDate.split("T")[0] + "T23:59:59.999Z");
+
+    if (start > end) {
+      return NextResponse.json({ success: false, error: "Start date must be before or equal to end date" }, { status: 400 });
+    }
+
+    const updatedBlock = await BlockedDate.findByIdAndUpdate(
+      id,
+      { startDate: start, endDate: end, roomType: roomType || "All", reason: reason || "" },
+      { new: true }
+    );
+
+    if (!updatedBlock) {
+      return NextResponse.json({ success: false, error: "Block not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: updatedBlock });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
 
 // DELETE: Remove a blocked date range
 export async function DELETE(request: Request) {

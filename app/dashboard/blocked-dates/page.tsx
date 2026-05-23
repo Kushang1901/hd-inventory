@@ -8,19 +8,28 @@ import {
   AlertCircle,
   Calendar,
   Layers,
-  HelpCircle
+  HelpCircle,
+  Pencil
 } from "lucide-react";
 
 export default function BlockedDatesManagement() {
+  const getLocalDateString = (d: Date = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [loading, setLoading] = useState(true);
   const [blocks, setBlocks] = useState<any[]>([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(getLocalDateString());
+  const [endDate, setEndDate] = useState(getLocalDateString());
   const [roomType, setRoomType] = useState("All");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
 
   const fetchBlocks = async () => {
     try {
@@ -40,26 +49,33 @@ export default function BlockedDatesManagement() {
     fetchBlocks();
   }, []);
 
-  const handleAddBlock = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     setSubmitting(true);
 
     try {
-      const res = await fetch("/api/blocked-dates", {
-        method: "POST",
+      const url = "/api/blocked-dates";
+      const method = editingBlockId ? "PUT" : "POST";
+      const bodyPayload = editingBlockId 
+        ? { id: editingBlockId, startDate, endDate, roomType, reason }
+        : { startDate, endDate, roomType, reason };
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ startDate, endDate, roomType, reason })
+        body: JSON.stringify(bodyPayload)
       });
       
       const data = await res.json();
       if (data.success) {
-        setSuccess("Date block saved successfully!");
-        setStartDate("");
-        setEndDate("");
+        setSuccess(editingBlockId ? "Date block updated successfully!" : "Date block saved successfully!");
+        setStartDate(getLocalDateString());
+        setEndDate(getLocalDateString());
         setReason("");
         setRoomType("All");
+        setEditingBlockId(null);
         fetchBlocks();
       } else {
         setError(data.error || "Failed to block dates.");
@@ -104,13 +120,17 @@ export default function BlockedDatesManagement() {
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Add Block Form Card */}
-        <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 space-y-6 self-start">
+        <div id="block-form-card" className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 space-y-6 self-start scroll-mt-20">
           <h2 className="text-lg font-serif text-white flex items-center gap-2 border-b border-zinc-800/60 pb-3">
-            <Plus className="h-4.5 w-4.5 text-amber-500" />
-            <span>Create Date Block</span>
+            {editingBlockId ? (
+              <Pencil className="h-4.5 w-4.5 text-amber-500" />
+            ) : (
+              <Plus className="h-4.5 w-4.5 text-amber-500" />
+            )}
+            <span>{editingBlockId ? "Edit Date Block" : "Create Date Block"}</span>
           </h2>
 
-          <form onSubmit={handleAddBlock} className="space-y-4 text-sm text-zinc-300">
+          <form onSubmit={handleFormSubmit} className="space-y-4 text-sm text-zinc-300">
             {error && (
               <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
@@ -200,13 +220,30 @@ export default function BlockedDatesManagement() {
             </div>
 
             {/* Submit */}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-lg bg-gradient-to-r from-red-800 to-amber-600 hover:from-red-700 hover:to-amber-500 text-white font-medium py-3 text-xs tracking-wider uppercase transition cursor-pointer shadow active:scale-[0.98] disabled:opacity-50"
-            >
-              {submitting ? "Processing..." : "Block Selected Dates"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 rounded-lg bg-gradient-to-r from-red-800 to-amber-600 hover:from-red-700 hover:to-amber-500 text-white font-medium py-3 text-xs tracking-wider uppercase transition cursor-pointer shadow active:scale-[0.98] disabled:opacity-50"
+              >
+                {submitting ? "Processing..." : (editingBlockId ? "Update Date Block" : "Block Selected Dates")}
+              </button>
+              {editingBlockId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingBlockId(null);
+                    setStartDate(getLocalDateString());
+                    setEndDate(getLocalDateString());
+                    setReason("");
+                    setRoomType("All");
+                  }}
+                  className="rounded-lg border border-zinc-700 bg-zinc-900/40 hover:bg-zinc-800 text-zinc-300 font-medium px-4 py-3 text-xs tracking-wider uppercase transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -243,10 +280,10 @@ export default function BlockedDatesManagement() {
                       <tr key={b._id} className="hover:bg-zinc-900/10 transition-colors">
                         <td className="px-6 py-4">
                           <div className="font-semibold text-white">
-                            {new Date(b.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            {new Date(b.startDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
                           </div>
                           <div className="text-[10px] text-zinc-500 mt-0.5">
-                            to {new Date(b.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            to {new Date(b.endDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -263,7 +300,21 @@ export default function BlockedDatesManagement() {
                         <td className="px-6 py-4 text-xs text-zinc-400 italic max-w-xs truncate">
                           {b.reason || "No notes"}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-6 py-4 text-right flex justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              setStartDate(b.startDate.split("T")[0]);
+                              setEndDate(b.endDate.split("T")[0]);
+                              setRoomType(b.roomType);
+                              setReason(b.reason || "");
+                              setEditingBlockId(b._id);
+                              document.getElementById("block-form-card")?.scrollIntoView({ behavior: "smooth" });
+                            }}
+                            className="rounded p-2 text-zinc-500 hover:bg-amber-500/10 hover:text-amber-400 transition cursor-pointer"
+                            title="Edit date block"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
                           <button
                             onClick={() => handleRemoveBlock(b._id)}
                             className="rounded p-2 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer"

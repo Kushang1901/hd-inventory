@@ -46,7 +46,8 @@ async function sendAutoWhatsAppReceipt(booking: any) {
     
     let roomsDetails = "";
     booking.rooms.forEach((room: any) => {
-        const desc = `${room.quantity}x ${room.roomType} (${room.selectedSubtype})${room.extraMattress ? ' + Extra Mattress' : ''}`;
+        const mattressCount = room.guests > 2 && room.roomType !== "Standard" ? room.guests - 2 : 0;
+        const desc = `${room.quantity}x ${room.roomType} (${room.selectedSubtype})${mattressCount > 0 ? ` + ${mattressCount} Extra Mattress${mattressCount > 1 ? 'es' : ''}` : ''}`;
         roomsDetails += `• ${desc} (Rate: ₹${room.pricePerNight}/night)\n`;
     });
 
@@ -197,7 +198,8 @@ export async function POST(request: Request) {
 
     const roomDetailsForSave = rooms.map((room: any) => {
       const baseRate = getRoomRate(room.roomType, room.selectedSubtype);
-      const rate = baseRate + (room.extraMattress ? 300 : 0);
+      const mattressCount = (room.guests > 2 && room.roomType !== "Standard") ? (room.guests - 2) : 0;
+      const rate = baseRate + (mattressCount * 350);
       calculatedTotal += rate * room.quantity * nights;
       
       return {
@@ -205,7 +207,7 @@ export async function POST(request: Request) {
         selectedSubtype: room.selectedSubtype,
         quantity: Number(room.quantity),
         guests: Number(room.guests),
-        extraMattress: !!room.extraMattress,
+        extraMattress: room.guests > 2,
         pricePerNight: rate
       };
     });

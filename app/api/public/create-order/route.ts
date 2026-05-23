@@ -162,7 +162,8 @@ export async function POST(request: Request) {
       }
 
       const baseRate = getRoomRate(roomType, selectedSubtype);
-      const rate = baseRate + (extraMattress ? 300 : 0);
+      const mattressCount = (guests > 2 && roomType !== "Standard") ? (guests - 2) : 0;
+      const rate = baseRate + (mattressCount * 350);
       computedTotalAmount += rate * quantity * nights;
     }
 

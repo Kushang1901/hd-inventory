@@ -137,7 +137,9 @@ export default function BlockedDatesManagement() {
                   value={startDate}
                   min={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setStartDate(e.target.value)}
+                  onClick={(e) => e.currentTarget.showPicker()}
                   className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none"
+                  lang="en-IN"
                 />
               </div>
             </div>
@@ -155,7 +157,9 @@ export default function BlockedDatesManagement() {
                   value={endDate}
                   min={startDate || new Date().toISOString().split("T")[0]}
                   onChange={(e) => setEndDate(e.target.value)}
+                  onClick={(e) => e.currentTarget.showPicker()}
                   className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none"
+                  lang="en-IN"
                 />
               </div>
             </div>

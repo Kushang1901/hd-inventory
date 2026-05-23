@@ -13,7 +13,8 @@ import {
   User,
   CheckCircle,
   XCircle,
-  FileText
+  FileText,
+  Download
 } from "lucide-react";
 
 export default function BookingsManagement() {
@@ -84,8 +85,34 @@ export default function BookingsManagement() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownload = () => {
+    if (!selectedBooking) return;
+
+    const runDownload = () => {
+      const element = document.getElementById("print-receipt-section");
+      if (element) {
+        const html2pdf = (window as any).html2pdf;
+        if (html2pdf) {
+          const opt = {
+            margin: [0.4, 0.4, 0.4, 0.4],
+            filename: `Hotel_Devang_Provisional_Bill_${selectedBooking.bookingId}.pdf`,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { scale: 2.5, useCORS: true },
+            jsPDF: { unit: "in", format: "a4", orientation: "portrait" }
+          };
+          html2pdf().from(element).set(opt).save();
+        }
+      }
+    };
+
+    if (!(window as any).html2pdf) {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = runDownload;
+      document.body.appendChild(script);
+    } else {
+      runDownload();
+    }
   };
 
   const openDetailsModal = (booking: any) => {
@@ -354,10 +381,10 @@ export default function BookingsManagement() {
 
                 <div className="flex gap-3">
                   <button
-                    onClick={handlePrint}
+                    onClick={handleDownload}
                     className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-amber-500/30 text-amber-500 text-xs font-semibold uppercase tracking-wider py-2.5 cursor-pointer transition"
                   >
-                    <Printer className="h-4 w-4" /> Print Provisional Bill
+                    <Download className="h-4 w-4" /> Download Provisional Bill
                   </button>
                 </div>
               </div>

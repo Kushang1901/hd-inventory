@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Booking, BlockedDate } from "@/lib/models/schema";
+import { corsResponse, handleOptions } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return handleOptions();
+}
+
 
 export async function GET(request: Request) {
   try {
@@ -11,7 +17,7 @@ export async function GET(request: Request) {
     const checkOutStr = searchParams.get("checkOut");
 
     if (!checkInStr || !checkOutStr) {
-      return NextResponse.json({ success: false, error: "Missing checkIn or checkOut dates" }, { status: 400 });
+      return corsResponse(NextResponse.json({ success: false, error: "Missing checkIn or checkOut dates" }, { status: 400 }));
     }
 
     const checkIn = new Date(checkInStr);
@@ -22,11 +28,11 @@ export async function GET(request: Request) {
     checkOut.setHours(23, 59, 59, 999);
 
     if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
-      return NextResponse.json({ success: false, error: "Invalid date format" }, { status: 400 });
+      return corsResponse(NextResponse.json({ success: false, error: "Invalid date format" }, { status: 400 }));
     }
 
     if (checkIn >= checkOut) {
-      return NextResponse.json({ success: false, error: "Check-out date must be after check-in" }, { status: 400 });
+      return corsResponse(NextResponse.json({ success: false, error: "Check-out date must be after check-in" }, { status: 400 }));
     }
 
     // 1. Fetch blocked dates overlapping with the selected range
@@ -142,14 +148,14 @@ export async function GET(request: Request) {
     // Check if the whole hotel is booked out or blocked
     const totalAvailableRooms = roomsAvailability.reduce((sum, r) => sum + r.availableCount, 0);
 
-    return NextResponse.json({
+    return corsResponse(NextResponse.json({
       success: true,
       available: totalAvailableRooms > 0,
       checkIn: checkIn.toISOString(),
       checkOut: checkOut.toISOString(),
       rooms: roomsAvailability,
-    });
+    }));
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return corsResponse(NextResponse.json({ success: false, error: err.message }, { status: 500 }));
   }
 }

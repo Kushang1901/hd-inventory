@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { connectToDatabase } from "@/lib/db";
 import { BlockedDate } from "@/lib/models/schema";
+import { corsResponse, handleOptions } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return handleOptions();
+}
+
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_SsUweEky8qbyAL",
@@ -32,7 +38,7 @@ export async function POST(request: Request) {
     const { checkIn: checkInStr, checkOut: checkOutStr, rooms } = await request.json();
 
     if (!checkInStr || !checkOutStr || !rooms || !Array.isArray(rooms) || rooms.length === 0) {
-      return NextResponse.json({ success: false, error: "Missing required booking details" }, { status: 400 });
+      return corsResponse(NextResponse.json({ success: false, error: "Missing required booking details" }, { status: 400 }));
     }
 
     const checkIn = new Date(checkInStr);
@@ -42,7 +48,7 @@ export async function POST(request: Request) {
     checkOut.setHours(23, 59, 59, 999);
 
     if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkIn >= checkOut) {
-      return NextResponse.json({ success: false, error: "Invalid booking dates" }, { status: 400 });
+      return corsResponse(NextResponse.json({ success: false, error: "Invalid booking dates" }, { status: 400 }));
     }
 
     // Verify room dates are not blocked
@@ -53,7 +59,7 @@ export async function POST(request: Request) {
 
     const isHotelFullyBlocked = overlappingBlocks.some(block => block.roomType === "All");
     if (isHotelFullyBlocked) {
-      return NextResponse.json({ success: false, error: "The hotel is completely blocked on these dates" }, { status: 400 });
+      return corsResponse(NextResponse.json({ success: false, error: "The hotel is completely blocked on these dates" }, { status: 400 }));
     }
 
     const blockedTypes = new Set(overlappingBlocks.map(block => block.roomType));
@@ -67,20 +73,20 @@ export async function POST(request: Request) {
       const { roomType, selectedSubtype, quantity, guests } = room;
       
       if (!roomType || !selectedSubtype || !quantity || !guests) {
-        return NextResponse.json({ success: false, error: "Missing parameters inside room details" }, { status: 400 });
+        return corsResponse(NextResponse.json({ success: false, error: "Missing parameters inside room details" }, { status: 400 }));
       }
 
       if (blockedTypes.has(roomType)) {
-        return NextResponse.json({ success: false, error: `${roomType} is blocked on the selected dates` }, { status: 400 });
+        return corsResponse(NextResponse.json({ success: false, error: `${roomType} is blocked on the selected dates` }, { status: 400 }));
       }
 
       // Check capacity rules
       const maxAllowed = roomType === "Standard" ? 2 : 5;
       if (guests > maxAllowed) {
-        return NextResponse.json({
+        return corsResponse(NextResponse.json({
           success: false, 
           error: `${roomType} rooms only allow a maximum of ${maxAllowed} persons. You entered ${guests} persons.`
-        }, { status: 400 });
+        }, { status: 400 }));
       }
 
       const rate = getRoomRate(roomType, selectedSubtype);
@@ -103,16 +109,16 @@ export async function POST(request: Request) {
 
     const order = await razorpay.orders.create(razorpayOptions);
 
-    return NextResponse.json({
+    return corsResponse(NextResponse.json({
       success: true,
       keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_SsUweEky8qbyAL",
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
       totalBookingAmount: computedTotalAmount
-    });
+    }));
 
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message || "Razorpay order creation failed" }, { status: 500 });
+    return corsResponse(NextResponse.json({ success: false, error: err.message || "Razorpay order creation failed" }, { status: 500 }));
   }
 }

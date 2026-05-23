@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectToDatabase } from "@/lib/db";
 import { Booking } from "@/lib/models/schema";
+import { corsResponse, handleOptions } from "@/lib/cors";
+
+export async function OPTIONS() {
+  return handleOptions();
+}
+
 
 // Price lookup helper (server-side safety verification)
 function getRoomRate(roomType: string, subtype: string): number {
@@ -38,7 +44,7 @@ export async function POST(request: Request) {
     } = await request.json();
 
     if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !guestName || !phone || !checkInStr || !checkOutStr || !rooms || rooms.length === 0) {
-      return NextResponse.json({ success: false, error: "Missing verification or booking parameters" }, { status: 400 });
+      return corsResponse(NextResponse.json({ success: false, error: "Missing verification or booking parameters" }, { status: 400 }));
     }
 
     // Verify signature
@@ -52,7 +58,7 @@ export async function POST(request: Request) {
     const isSignatureValid = generatedSignature === razorpay_signature;
 
     if (!isSignatureValid) {
-      return NextResponse.json({ success: false, error: "Payment verification failed. Invalid signature." }, { status: 400 });
+      return corsResponse(NextResponse.json({ success: false, error: "Payment verification failed. Invalid signature." }, { status: 400 }));
     }
 
     const checkIn = new Date(checkInStr);
@@ -112,13 +118,13 @@ export async function POST(request: Request) {
 
     await newBooking.save();
 
-    return NextResponse.json({
+    return corsResponse(NextResponse.json({
       success: true,
       message: "Payment verified and booking confirmed!",
       booking: newBooking
-    });
+    }));
 
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message || "Failed to finalize booking" }, { status: 500 });
+    return corsResponse(NextResponse.json({ success: false, error: err.message || "Failed to finalize booking" }, { status: 500 }));
   }
 }

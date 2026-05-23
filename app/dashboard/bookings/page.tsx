@@ -409,7 +409,7 @@ export default function BookingsManagement() {
                           selectedBooking.rooms.map((room: any, index: number) => (
                             <tr key={index} className="py-2">
                               <td className="py-1.5 font-medium">
-                                {room.quantity}x {room.roomType} ({room.selectedSubtype})
+                                {room.quantity}x {room.roomType} ({room.selectedSubtype}){room.extraMattress ? " + Extra Mattress" : ""}
                                 <div className="text-[9px] text-zinc-400 font-sans mt-0.5">Capacity: {room.guests} Guests</div>
                               </td>
                               <td className="py-1.5 text-center">{getNights(selectedBooking.checkIn, selectedBooking.checkOut)}</td>

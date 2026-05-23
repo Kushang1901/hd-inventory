@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
     for (const room of rooms) {
-      const { roomType, selectedSubtype, quantity, guests } = room;
+      const { roomType, selectedSubtype, quantity, guests, extraMattress } = room;
       
       if (!roomType || !selectedSubtype || !quantity || !guests) {
         return corsResponse(NextResponse.json({ success: false, error: "Missing parameters inside room details" }, { status: 400 }));
@@ -89,7 +89,8 @@ export async function POST(request: Request) {
         }, { status: 400 }));
       }
 
-      const rate = getRoomRate(roomType, selectedSubtype);
+      const baseRate = getRoomRate(roomType, selectedSubtype);
+      const rate = baseRate + (extraMattress ? 300 : 0);
       computedTotalAmount += rate * quantity * nights;
     }
 

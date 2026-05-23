@@ -6,10 +6,12 @@ export interface IRoomBooking {
   selectedSubtype: string; // "AC", "Non-AC"
   quantity: number;
   guests: number;
+  extraMattress?: boolean;
   pricePerNight: number;
 }
 
 // Interface for Booking Document
+
 export interface IBooking extends Document {
   bookingId: string; // e.g. HD-YYYYMMDD-123
   guestName: string;
@@ -46,6 +48,7 @@ const RoomBookingSchema = new Schema<IRoomBooking>({
   selectedSubtype: { type: String, required: true },
   quantity: { type: Number, required: true, default: 1 },
   guests: { type: Number, required: true },
+  extraMattress: { type: Boolean, default: false },
   pricePerNight: { type: Number, required: true }
 });
 

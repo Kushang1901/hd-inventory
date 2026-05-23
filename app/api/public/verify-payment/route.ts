@@ -72,7 +72,8 @@ export async function POST(request: Request) {
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
     const roomDetailsForSave = rooms.map((room: any) => {
-      const rate = getRoomRate(room.roomType, room.selectedSubtype);
+      const baseRate = getRoomRate(room.roomType, room.selectedSubtype);
+      const rate = baseRate + (room.extraMattress ? 300 : 0);
       calculatedTotal += rate * room.quantity * nights;
       
       return {
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
         selectedSubtype: room.selectedSubtype,
         quantity: Number(room.quantity),
         guests: Number(room.guests),
+        extraMattress: !!room.extraMattress,
         pricePerNight: rate
       };
     });

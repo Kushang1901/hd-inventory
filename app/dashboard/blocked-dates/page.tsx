@@ -49,6 +49,106 @@ export default function BlockedDatesManagement() {
     fetchBlocks();
   }, []);
 
+  // Load Flatpickr dynamically client-side and initialize pickers
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadFlatpickr = async () => {
+      // Add Flatpickr CSS to document head if not present
+      if (!document.getElementById("flatpickr-css")) {
+        const link = document.createElement("link");
+        link.id = "flatpickr-css";
+        link.rel = "stylesheet";
+        link.href = "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
+        document.head.appendChild(link);
+        
+        // Load Dark theme for Flatpickr to match the premium dark theme of admin dashboard
+        const darkTheme = document.createElement("link");
+        darkTheme.id = "flatpickr-dark-css";
+        darkTheme.rel = "stylesheet";
+        darkTheme.href = "https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css";
+        document.head.appendChild(darkTheme);
+      }
+      
+      // Load script if not already present
+      if (!(window as any).flatpickr) {
+        const scriptId = "flatpickr-js";
+        if (!document.getElementById(scriptId)) {
+          const script = document.createElement("script");
+          script.id = scriptId;
+          script.src = "https://cdn.jsdelivr.net/npm/flatpickr";
+          script.onload = () => {
+            if (isMounted) initPicker();
+          };
+          document.body.appendChild(script);
+        }
+      } else {
+        if (isMounted) initPicker();
+      }
+    };
+
+    const initPicker = () => {
+      const fp = (window as any).flatpickr;
+      if (!fp) return;
+      
+      const startEl = document.getElementById("startDate");
+      const endEl = document.getElementById("endDate");
+      
+      if (startEl && endEl) {
+        const startPicker = fp(startEl, {
+          dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "d/m/Y",
+          allowInput: true,
+          defaultDate: startDate || undefined,
+          minDate: "today",
+          onChange: (selectedDates: any[], dateStr: string) => {
+            setStartDate(dateStr);
+            if (selectedDates.length > 0) {
+              const nextDay = new Date(selectedDates[0]);
+              nextDay.setDate(nextDay.getDate() + 1);
+              endPicker.set("minDate", nextDay);
+            }
+          }
+        });
+        
+        const endPicker = fp(endEl, {
+          dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "d/m/Y",
+          allowInput: true,
+          defaultDate: endDate || undefined,
+          minDate: startDate || "today",
+          onChange: (selectedDates: any[], dateStr: string) => {
+            setEndDate(dateStr);
+          }
+        });
+      }
+    };
+
+    loadFlatpickr();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Sync React state changes (e.g. form clearing, edit selection) back to Flatpickr instances
+  useEffect(() => {
+    const fp = (window as any).flatpickr;
+    if (!fp) return;
+    
+    const startEl = document.getElementById("startDate");
+    const endEl = document.getElementById("endDate");
+    
+    if (startEl && (startEl as any)._flatpickr) {
+      (startEl as any)._flatpickr.setDate(startDate || "", false);
+    }
+    if (endEl && (endEl as any)._flatpickr) {
+      (endEl as any)._flatpickr.setDate(endDate || "", false);
+    }
+  }, [startDate, endDate]);
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -152,14 +252,11 @@ export default function BlockedDatesManagement() {
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
                 <input
-                  type="date"
+                  type="text"
+                  id="startDate"
                   required
-                  value={startDate}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  onClick={(e) => e.currentTarget.showPicker()}
+                  placeholder="dd/mm/yyyy"
                   className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none"
-                  lang="en-IN"
                 />
               </div>
             </div>
@@ -172,14 +269,11 @@ export default function BlockedDatesManagement() {
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
                 <input
-                  type="date"
+                  type="text"
+                  id="endDate"
                   required
-                  value={endDate}
-                  min={startDate || new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  onClick={(e) => e.currentTarget.showPicker()}
+                  placeholder="dd/mm/yyyy"
                   className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none"
-                  lang="en-IN"
                 />
               </div>
             </div>

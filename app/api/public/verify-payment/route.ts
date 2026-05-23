@@ -123,6 +123,73 @@ export async function POST(request: Request) {
       return corsResponse(NextResponse.json({ success: false, error: "Bookings are only allowed within the next 3 months." }, { status: 400 }));
     }
 
+    // Secondary Overbooking Validation Checks
+    const activeOverlappingBookings = await Booking.find({
+      bookingStatus: { $ne: "Cancelled" },
+      checkIn: { $lt: checkOut },
+      checkOut: { $gt: checkIn }
+    });
+
+    const totalCapacities: { [key: string]: number } = {
+      "Standard": 2,
+      "Deluxe": 31,
+      "Super Deluxe": 8,
+      "Suite": 2
+    };
+
+    const bookedCounts: { [key: string]: number } = {
+      "Standard": 0,
+      "Deluxe": 0,
+      "Super Deluxe": 0,
+      "Suite": 0
+    };
+
+    activeOverlappingBookings.forEach((b: any) => {
+      if (b.rooms && b.rooms.length > 0) {
+        b.rooms.forEach((room: any) => {
+          const type = room.roomType;
+          if (bookedCounts[type] !== undefined) {
+            bookedCounts[type] += Number(room.quantity) || 1;
+          }
+        });
+      } else if (b.roomType) {
+        const type = b.roomType;
+        if (bookedCounts[type] !== undefined) {
+          bookedCounts[type] += 1;
+        }
+      }
+    });
+
+    const requestedCounts: { [key: string]: number } = {
+      "Standard": 0,
+      "Deluxe": 0,
+      "Super Deluxe": 0,
+      "Suite": 0
+    };
+
+    for (const room of rooms) {
+      const type = room.roomType;
+      if (requestedCounts[type] !== undefined) {
+        requestedCounts[type] += Number(room.quantity) || 0;
+      }
+    }
+
+    for (const type of Object.keys(totalCapacities)) {
+      const requested = requestedCounts[type];
+      if (requested > 0) {
+        const cap = totalCapacities[type];
+        const booked = bookedCounts[type] || 0;
+        const remaining = Math.max(0, cap - booked);
+        
+        if (requested > remaining) {
+          return corsResponse(NextResponse.json({
+            success: false,
+            error: `Overbooking validation block: Only ${remaining} ${type} room(s) are available on these dates, but you requested ${requested}.`
+          }, { status: 400 }));
+        }
+      }
+    }
+
     // Dynamic price sheet calculations on server side (Zero-Tampering Security)
     let calculatedTotal = 0;
     const timeDiff = Math.abs(checkOut.getTime() - checkIn.getTime());

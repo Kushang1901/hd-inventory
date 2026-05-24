@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import Script from "next/script";
 
 export default function AdminLogin() {
   const [username, setUsername] = useState("");
@@ -18,10 +19,35 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
+      let token = "";
+      if (typeof window !== "undefined" && (window as any).grecaptcha) {
+        try {
+          token = await new Promise<string>((resolve, reject) => {
+            (window as any).grecaptcha.ready(() => {
+              (window as any).grecaptcha
+                .execute("6LffN_osAAAAAOHid-cO91BJ-0a4KPANDgW5HEWD", { action: "login" })
+                .then((t: string) => resolve(t))
+                .catch((err: any) => reject(err));
+            });
+          });
+        } catch (err) {
+          console.error("reCAPTCHA execution failed:", err);
+          setError("reCAPTCHA verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (!token) {
+        setError("reCAPTCHA is still initializing. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, recaptchaToken: token }),
       });
 
       const data = await response.json();
@@ -39,13 +65,18 @@ export default function AdminLogin() {
   };
 
   return (
-    <div 
-      className="flex min-h-screen items-center justify-center p-4 bg-radial"
-      style={{
-        backgroundImage: "radial-gradient(circle at center, #2e0000 0%, #0c0000 100%)",
-        backgroundAttachment: "fixed"
-      }}
-    >
+    <>
+      <Script
+        src="https://www.google.com/recaptcha/api.js?render=6LffN_osAAAAAOHid-cO91BJ-0a4KPANDgW5HEWD"
+        strategy="afterInteractive"
+      />
+      <div 
+        className="flex min-h-screen items-center justify-center p-4 bg-radial"
+        style={{
+          backgroundImage: "radial-gradient(circle at center, #2e0000 0%, #0c0000 100%)",
+          backgroundAttachment: "fixed"
+        }}
+      >
       {/* Dynamic Background Particles Effect using CSS animations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
         <div className="absolute w-[2px] h-[2px] bg-yellow-400 rounded-full top-[10%] left-[20%] animate-pulse"></div>
@@ -144,6 +175,7 @@ export default function AdminLogin() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -525,7 +525,7 @@ export default function SetPricesManagement() {
                       placeholder="e.g. 2500"
                       value={newPrice}
                       onChange={(e) => setNewPrice(e.target.value)}
-                      className="w-full text-right rounded-lg border border-zinc-800 bg-zinc-950/60 pl-8 pr-4 py-2 text-xs font-semibold text-white outline-none focus:border-amber-500/50 focus:bg-zinc-950"
+                      className="w-full text-left rounded-lg border border-zinc-800 bg-zinc-950/60 pl-8 pr-4 py-2 text-xs font-semibold text-white outline-none focus:border-amber-500/50 focus:bg-zinc-950"
                     />
                   </div>
                 </div>

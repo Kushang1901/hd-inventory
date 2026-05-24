@@ -15,12 +15,70 @@ import {
   DoorOpen
 } from "lucide-react";
 
+const INDIAN_HOLIDAYS: { [key: number]: { date: number; name: string; type: "Gazetted" | "Restricted" | "Festival" }[] } = {
+  0: [ // January
+    { date: 14, name: "Makar Sankranti / Pongal", type: "Festival" },
+    { date: 26, name: "Republic Day", type: "Gazetted" }
+  ],
+  1: [ // February
+    { date: 15, name: "Maha Shivratri", type: "Festival" },
+    { date: 21, name: "Vasant Panchami", type: "Festival" }
+  ],
+  2: [ // March
+    { date: 3, name: "Holi (Dhulandi)", type: "Gazetted" },
+    { date: 19, name: "Chaitra Navratri Starts", type: "Festival" },
+    { date: 27, name: "Rama Navami", type: "Festival" },
+    { date: 30, name: "Mahavir Jayanti", type: "Restricted" }
+  ],
+  3: [ // April
+    { date: 3, name: "Good Friday", type: "Gazetted" },
+    { date: 14, name: "Dr. B.R. Ambedkar Jayanti", type: "Restricted" },
+    { date: 18, name: "Parashurama Jayanti / Akshaya Tritiya", type: "Festival" }
+  ],
+  4: [ // May
+    { date: 1, name: "Buddha Purnima", type: "Gazetted" }
+  ],
+  5: [ // June
+    { date: 16, name: "Kabir Jayanti", type: "Restricted" }
+  ],
+  6: [ // July
+    { date: 15, name: "Muharram", type: "Gazetted" },
+    { date: 26, name: "Ashadhi Ekadashi", type: "Festival" }
+  ],
+  7: [ // August
+    { date: 15, name: "Independence Day", type: "Gazetted" },
+    { date: 27, name: "Raksha Bandhan", type: "Festival" },
+    { date: 31, name: "Sri Krishna Janmashtami", type: "Festival" }
+  ],
+  8: [ // September
+    { date: 4, name: "Ganesh Chaturthi", type: "Festival" },
+    { date: 5, name: "Teachers' Day", type: "Restricted" },
+    { date: 15, name: "Milad un-Nabi", type: "Gazetted" }
+  ],
+  9: [ // October
+    { date: 2, name: "Mahatma Gandhi Jayanti", type: "Gazetted" },
+    { date: 19, name: "Durga Ashtami", type: "Festival" },
+    { date: 20, name: "Maha Navami / Dussehra", type: "Gazetted" }
+  ],
+  10: [ // November
+    { date: 8, name: "Diwali / Deepavali", type: "Gazetted" },
+    { date: 9, name: "Govardhan Puja", type: "Festival" },
+    { date: 10, name: "Bhai Dooj", type: "Festival" },
+    { date: 24, name: "Guru Nanak Jayanti", type: "Gazetted" }
+  ],
+  11: [ // December
+    { date: 25, name: "Christmas Day", type: "Gazetted" }
+  ]
+};
+
 export default function CalendarDashboard() {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
   const [blockedDates, setBlockedDates] = useState<any[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [holidayCache, setHolidayCache] = useState<{ [key: string]: any }>({});
+  const [currentHolidays, setCurrentHolidays] = useState<any[]>([]);
 
   // Capacities standard list
   const totalCapacities: { [key: string]: number } = {
@@ -85,6 +143,57 @@ export default function CalendarDashboard() {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchHolidays = async () => {
+      const yearStr = currentMonth.getFullYear();
+      if (holidayCache[yearStr]) {
+        setCurrentHolidays(holidayCache[yearStr][currentMonth.getMonth()] || []);
+        return;
+      }
+      try {
+        const res = await fetch(`https://date.nager.at/api/v3/publicholidays/${yearStr}/IN`);
+        if (!res.ok) throw new Error("Failed to fetch holidays");
+        const data = await res.json();
+        
+        const formatted: { [key: number]: any[] } = {};
+        data.forEach((h: any) => {
+          const dateObj = new Date(h.date);
+          const m = dateObj.getUTCMonth();
+          const d = dateObj.getUTCDate();
+          
+          if (!formatted[m]) {
+            formatted[m] = [];
+          }
+          
+          let holidayType: "Gazetted" | "Restricted" | "Festival" = "Gazetted";
+          const nameLower = h.name.toLowerCase();
+          if (nameLower.includes("maha shivratri") || nameLower.includes("holi") || nameLower.includes("janmashtami") || nameLower.includes("diwali") || nameLower.includes("dussehra") || nameLower.includes("ram navami")) {
+            holidayType = "Festival";
+          } else if (h.types && h.types.includes("Optional")) {
+            holidayType = "Restricted";
+          }
+          
+          formatted[m].push({
+            date: d,
+            name: h.localName || h.name,
+            type: holidayType
+          });
+        });
+        
+        for (const m in formatted) {
+          formatted[m].sort((a, b) => a.date - b.date);
+        }
+        
+        setHolidayCache(prev => ({ ...prev, [yearStr]: formatted }));
+        setCurrentHolidays(formatted[currentMonth.getMonth()] || []);
+      } catch (err) {
+        console.warn("API failed, falling back to static map", err);
+        setCurrentHolidays(INDIAN_HOLIDAYS[currentMonth.getMonth() as keyof typeof INDIAN_HOLIDAYS] || []);
+      }
+    };
+    fetchHolidays();
+  }, [currentMonth, holidayCache]);
 
   // Helper: Normalize local date to UTC midnight timestamp
   const normalizeLocalDate = (d: Date) => {
@@ -412,6 +521,42 @@ export default function CalendarDashboard() {
                   <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
                   <span>Sold Out / Fully Blocked</span>
                 </span>
+              </div>
+
+              {/* Indian Festivals & Holidays Panel */}
+              <div className="mt-6 rounded-xl border border-amber-500/20 bg-zinc-950/40 p-4 space-y-3 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
+                <h3 className="text-xs uppercase tracking-wider font-semibold text-amber-500 flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-amber-500" />
+                  <span>Indian Festivals & Holidays ({currentMonth.toLocaleString("default", { month: "long" })})</span>
+                </h3>
+                {(() => {
+                  if (currentHolidays.length === 0) {
+                    return <p className="text-xs text-zinc-500 italic">No major holidays or festivals recorded for this month.</p>;
+                  }
+                  return (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {currentHolidays.map((holiday, idx) => (
+                        <div key={idx} className="flex items-center gap-3 rounded-lg border border-zinc-800/80 bg-zinc-900/20 px-3.5 py-2.5 hover:border-amber-500/20 transition-all duration-200">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-xs font-mono font-bold text-amber-400">
+                            {holiday.date}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-xs text-white truncate">{holiday.name}</p>
+                            <span className={`inline-block text-[9px] font-bold uppercase tracking-wider mt-0.5 ${
+                              holiday.type === "Gazetted"
+                                ? "text-red-400"
+                                : holiday.type === "Restricted"
+                                  ? "text-amber-400"
+                                  : "text-emerald-400"
+                            }`}>
+                              {holiday.type}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
             </div>

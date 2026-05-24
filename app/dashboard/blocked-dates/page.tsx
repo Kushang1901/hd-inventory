@@ -34,6 +34,10 @@ export default function BlockedDatesManagement() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [selectedPreviewBlock, setSelectedPreviewBlock] = useState<any | null>(null);
 
+  // Flatpickr instances references
+  const [startFp, setStartFp] = useState<any>(null);
+  const [endFp, setEndFp] = useState<any>(null);
+
   const fetchBlocks = async () => {
     try {
       const res = await fetch("/api/blocked-dates");
@@ -54,100 +58,128 @@ export default function BlockedDatesManagement() {
 
   // Load Flatpickr dynamically client-side and initialize pickers
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadFlatpickr = async () => {
-      // Add Flatpickr CSS to document head if not present
-      if (!document.getElementById("flatpickr-css")) {
-        const link = document.createElement("link");
-        link.id = "flatpickr-css";
-        link.rel = "stylesheet";
-        link.href = "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
-        document.head.appendChild(link);
-        
-        // Load Dark theme for Flatpickr to match the premium dark theme of admin dashboard
-        const darkTheme = document.createElement("link");
-        darkTheme.id = "flatpickr-dark-css";
-        darkTheme.rel = "stylesheet";
-        darkTheme.href = "https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css";
-        document.head.appendChild(darkTheme);
-      }
-      
-      // Load script if not already present
-      if (!(window as any).flatpickr) {
-        const scriptId = "flatpickr-js";
-        if (!document.getElementById(scriptId)) {
-          const script = document.createElement("script");
-          script.id = scriptId;
-          script.src = "https://cdn.jsdelivr.net/npm/flatpickr";
-          script.onload = () => {
-            if (isMounted) initPicker();
-          };
-          document.body.appendChild(script);
-        }
-      } else {
-        if (isMounted) initPicker();
-      }
-    };
+    let activeStartFp: any = null;
+    let activeEndFp: any = null;
 
-    const initPicker = () => {
-      const fp = (window as any).flatpickr;
-      if (!fp) return;
+    // Dynamically import flatpickr inside useEffect to bypass SSR window issues
+    import("flatpickr").then((module) => {
+      const fp = module.default;
       
-      const startEl = document.getElementById("startDate");
-      const endEl = document.getElementById("endDate");
-      
-      if (startEl && endEl) {
-        const startPicker = fp(startEl, {
-          dateFormat: "Y-m-d",
-          allowInput: true,
-          defaultDate: startDate || undefined,
-          minDate: "today",
-          onChange: (selectedDates: any[], dateStr: string) => {
-            setStartDate(dateStr);
-            if (selectedDates.length > 0) {
-              const nextDay = new Date(selectedDates[0]);
-              nextDay.setDate(nextDay.getDate() + 1);
-              endPicker.set("minDate", nextDay);
+      // Load flatpickr dark theme stylesheet
+      import("flatpickr/dist/themes/dark.css");
+
+      activeStartFp = fp("#startDate", {
+        altInput: true,
+        altFormat: "d/m/Y",
+        dateFormat: "Y-m-d",
+        allowInput: true,
+        defaultDate: startDate || undefined,
+        minDate: "today",
+        parseDate: (datestr) => {
+          if (datestr && datestr.includes("/")) {
+            const parts = datestr.split("/");
+            if (parts.length === 3) {
+              const day = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10) - 1;
+              const year = parseInt(parts[2], 10);
+              const d = new Date(year, month, day);
+              if (!isNaN(d.getTime())) return d;
+            }
+          }
+          return new Date(datestr);
+        },
+        onChange: (selectedDates: any[], dateStr: string) => {
+          setStartDate(dateStr);
+          if (activeEndFp && selectedDates.length > 0) {
+            const nextDay = new Date(selectedDates[0]);
+            nextDay.setDate(nextDay.getDate() + 1);
+            activeEndFp.set("minDate", nextDay);
+          }
+        }
+      });
+
+      activeEndFp = fp("#endDate", {
+        altInput: true,
+        altFormat: "d/m/Y",
+        dateFormat: "Y-m-d",
+        allowInput: true,
+        defaultDate: endDate || undefined,
+        minDate: startDate || "today",
+        parseDate: (datestr) => {
+          if (datestr && datestr.includes("/")) {
+            const parts = datestr.split("/");
+            if (parts.length === 3) {
+              const day = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10) - 1;
+              const year = parseInt(parts[2], 10);
+              const d = new Date(year, month, day);
+              if (!isNaN(d.getTime())) return d;
+            }
+          }
+          return new Date(datestr);
+        },
+        onChange: (selectedDates: any[], dateStr: string) => {
+          setEndDate(dateStr);
+        }
+      });
+
+      setStartFp(activeStartFp);
+      setEndFp(activeEndFp);
+
+      // Auto-slash helper for typed date inputs
+      const setupAutoSlash = (element: HTMLInputElement, fpInstance: any) => {
+        if (!element) return;
+        element.addEventListener("input", function (e: any) {
+          let value = e.target.value;
+          let clean = value.replace(/\D/g, "");
+          if (clean.length > 8) {
+            clean = clean.slice(0, 8);
+          }
+          let formatted = "";
+          if (clean.length > 0) {
+            formatted += clean.slice(0, 2);
+          }
+          if (clean.length > 2) {
+            formatted += "/" + clean.slice(2, 4);
+          }
+          if (clean.length > 4) {
+            formatted += "/" + clean.slice(4, 8);
+          }
+          e.target.value = formatted;
+
+          // If a complete valid date is entered (10 chars), sync it to Flatpickr
+          if (formatted.length === 10) {
+            const parts = formatted.split("/");
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            const d = new Date(year, month, day);
+            if (!isNaN(d.getTime()) && year >= 2020) {
+              fpInstance.setDate(d, true); // true triggers the onChange event
             }
           }
         });
-        
-        const endPicker = fp(endEl, {
-          dateFormat: "Y-m-d",
-          allowInput: true,
-          defaultDate: endDate || undefined,
-          minDate: startDate || "today",
-          onChange: (selectedDates: any[], dateStr: string) => {
-            setEndDate(dateStr);
-          }
-        });
+      };
 
+      if (activeStartFp && activeStartFp.altInput) {
+        setupAutoSlash(activeStartFp.altInput, activeStartFp);
       }
-    };
-
-    loadFlatpickr();
+      if (activeEndFp && activeEndFp.altInput) {
+        setupAutoSlash(activeEndFp.altInput, activeEndFp);
+      }
+    });
 
     return () => {
-      isMounted = false;
+      if (activeStartFp) activeStartFp.destroy();
+      if (activeEndFp) activeEndFp.destroy();
     };
   }, []);
 
   // Sync React state changes (e.g. form clearing, edit selection) back to Flatpickr instances
   useEffect(() => {
-    const fp = (window as any).flatpickr;
-    if (!fp) return;
-    
-    const startEl = document.getElementById("startDate");
-    const endEl = document.getElementById("endDate");
-    
-    if (startEl && (startEl as any)._flatpickr) {
-      (startEl as any)._flatpickr.setDate(startDate || "", false);
-    }
-    if (endEl && (endEl as any)._flatpickr) {
-      (endEl as any)._flatpickr.setDate(endDate || "", false);
-    }
-  }, [startDate, endDate]);
+    if (startFp) startFp.setDate(startDate || "", false);
+    if (endFp) endFp.setDate(endDate || "", false);
+  }, [startDate, endDate, startFp, endFp]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

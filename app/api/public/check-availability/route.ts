@@ -15,6 +15,22 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const checkInStr = searchParams.get("checkIn");
     const checkOutStr = searchParams.get("checkOut");
+    const recaptchaToken = searchParams.get("recaptchaToken");
+
+    // Verify reCAPTCHA token if configured or fallback to provided secret
+    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "6LfGM_osAAAAAOAtAHW1cR7GLsnK21bnFKg3oCcs";
+    if (recaptchaSecret) {
+      if (!recaptchaToken) {
+        return corsResponse(NextResponse.json({ success: false, error: "Please complete the reCAPTCHA verification." }, { status: 400 }));
+      }
+      
+      const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${recaptchaToken}`;
+      const verifyRes = await fetch(verifyUrl, { method: "POST" });
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        return corsResponse(NextResponse.json({ success: false, error: "Invalid reCAPTCHA verification. Please try again." }, { status: 400 }));
+      }
+    }
 
     if (!checkInStr || !checkOutStr) {
       return corsResponse(NextResponse.json({ success: false, error: "Missing checkIn or checkOut dates" }, { status: 400 }));

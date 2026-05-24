@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { Coins, Save, AlertCircle, RefreshCw, IndianRupee, Tag } from "lucide-react";
+import { useTheme } from "../ThemeContext";
 
 export default function SetPricesManagement() {
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -91,19 +93,19 @@ export default function SetPricesManagement() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn max-w-4xl">
+    <div className="space-y-8 animate-fadeIn max-w-4xl transition-colors duration-300">
       {/* Page Title Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-5">
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 pb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-serif text-white font-semibold flex items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-serif text-zinc-900 dark:text-white font-semibold flex items-center gap-2 animate-fadeIn">
             <Coins className="h-6 w-6 text-amber-500" />
             <span>Room Price Controller</span>
           </h1>
-          <p className="text-xs md:text-sm text-zinc-500 mt-1">Adjust and configure seasonal stay tariffs. New rates reflect instantly in booking engine calculations.</p>
+          <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 mt-1">Adjust and configure seasonal stay tariffs. New rates reflect instantly in booking engine calculations.</p>
         </div>
         <button
           onClick={fetchPrices}
-          className="rounded-lg p-2.5 border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800 text-zinc-400 hover:text-white transition cursor-pointer flex items-center gap-1.5 text-xs font-medium"
+          className="rounded-lg p-2.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/30 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-605 dark:text-zinc-400 hover:text-zinc-900 hover:text-white transition cursor-pointer flex items-center gap-1.5 text-xs font-medium shadow-sm animate-scaleUp"
           title="Reload Prices"
         >
           <RefreshCw className="h-4 w-4" />
@@ -112,21 +114,21 @@ export default function SetPricesManagement() {
       </div>
 
       {loading ? (
-        <div className="text-center py-24 rounded-xl border border-zinc-800 bg-zinc-900/10">
+        <div className="text-center py-24 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/10 shadow-sm">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-3"></div>
-          <p className="text-zinc-500 text-sm">Querying database pricing catalog...</p>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm">Querying database pricing catalog...</p>
         </div>
       ) : (
         <form onSubmit={handleFormSubmit} className="space-y-6">
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-xs md:text-sm text-red-400 flex items-center gap-2.5">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-xs md:text-sm text-red-600 dark:text-red-400 flex items-center gap-2.5">
               <AlertCircle className="h-5 w-5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs md:text-sm text-emerald-400">
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs md:text-sm text-emerald-600 dark:text-emerald-400">
               {success}
             </div>
           )}
@@ -140,22 +142,22 @@ export default function SetPricesManagement() {
               return (
                 <div 
                   key={type} 
-                  className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 space-y-4 shadow-xl hover:border-zinc-700/60 transition-all duration-300"
+                  className="rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/10 backdrop-blur-md p-6 space-y-4 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700/60 transition-all duration-300"
                 >
-                  <div className="flex items-center gap-2.5 border-b border-zinc-800/60 pb-3">
+                  <div className="flex items-center gap-2.5 border-b border-zinc-200 dark:border-zinc-800/60 pb-3">
                     <Tag className="h-4.5 w-4.5 text-amber-500" />
-                    <h3 className="font-serif text-white font-semibold text-base">{getRoomName(type)}</h3>
+                    <h3 className="font-serif text-zinc-900 dark:text-white font-semibold text-base">{getRoomName(type)}</h3>
                   </div>
 
                   <div className="space-y-4">
                     {items.map((item: any) => (
                       <div key={item.subtype} className="flex items-center justify-between gap-4">
-                        <span className="text-xs uppercase tracking-wider text-zinc-400 font-medium">
+                        <span className="text-xs uppercase tracking-wider text-zinc-600 dark:text-zinc-400 font-medium">
                           {item.subtype === "AC" ? "Air Conditioned (AC)" : "Non-Air Conditioned (Non-AC)"}
                         </span>
                         
                         <div className="relative w-36 shrink-0">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 flex items-center justify-center">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 flex items-center justify-center">
                             <IndianRupee className="h-3.5 w-3.5" />
                           </span>
                           <input
@@ -164,7 +166,7 @@ export default function SetPricesManagement() {
                             min="0"
                             value={item.price || ""}
                             onChange={(e) => handlePriceChange(item.roomType, item.subtype, e.target.value)}
-                            className="w-full text-right rounded-lg border border-zinc-800 bg-zinc-950/60 pl-8 pr-4 py-2 text-sm font-semibold text-white outline-none focus:border-amber-500/50 appearance-none focus:bg-zinc-950 transition"
+                            className="w-full text-right rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 pl-8 pr-4 py-2 text-sm font-semibold text-zinc-850 dark:text-white outline-none focus:border-amber-500/50 appearance-none focus:bg-white dark:focus:bg-zinc-950 transition shadow-sm"
                           />
                         </div>
                       </div>
@@ -176,8 +178,8 @@ export default function SetPricesManagement() {
           </div>
 
           {/* Action Trigger Card */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/20 p-4 flex justify-end gap-3 items-center backdrop-blur-md">
-            <span className="text-xs text-zinc-500 hidden sm:inline">* Prices updated here will instantly take effect across checking and verification nodes.</span>
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/20 p-4 flex justify-end gap-3 items-center backdrop-blur-md shadow-sm">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">* Prices updated here will instantly take effect across checking and verification nodes.</span>
             <button
               type="submit"
               disabled={saving}

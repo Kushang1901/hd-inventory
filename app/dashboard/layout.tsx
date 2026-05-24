@@ -15,8 +15,21 @@ import {
   Calendar,
   Coins
 } from "lucide-react";
+import { ThemeProvider, useTheme } from "./ThemeContext";
 
 export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ThemeProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </ThemeProvider>
+  );
+}
+
+function DashboardLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -26,6 +39,7 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -81,30 +95,30 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-100 font-sans">
+    <div className={`flex min-h-screen ${theme === "dark" ? "dark bg-zinc-950 text-zinc-100" : "bg-slate-50 text-zinc-800"} font-sans transition-colors duration-300`}>
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex md:w-64 flex-col border-r border-zinc-800 bg-zinc-950">
+      <aside className="hidden md:flex md:w-64 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-colors duration-300">
         {/* Brand */}
-        <div className="flex h-20 items-center justify-between border-b border-zinc-800 px-6">
+        <div className="flex h-20 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6">
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500">
               <span className="text-xl font-serif">ॐ</span>
             </div>
             <div>
-              <h2 className="text-sm font-serif tracking-wider text-amber-400">DEVANG</h2>
+              <h2 className="text-sm font-serif tracking-wider text-amber-600 dark:text-amber-400">DEVANG</h2>
               <p className="text-[9px] tracking-wider text-zinc-500 uppercase">Dashboard</p>
             </div>
           </Link>
         </div>
 
         {/* User profile */}
-        <div className="px-6 py-6 border-b border-zinc-800 bg-zinc-900/20">
+        <div className="px-6 py-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/20">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-red-800 to-amber-600 flex items-center justify-center border border-amber-500/30">
               <Crown className="h-5 w-5 text-amber-300" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-zinc-200">Kushang (Owner)</p>
+              <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">Kushang (Owner)</p>
               <p className="text-[10px] text-emerald-500 flex items-center gap-1 font-mono uppercase">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Active Owner
@@ -122,26 +136,24 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className={`group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                className={`group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 border ${
                   isActive
-                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(202,160,53,0.05)]"
-                    : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100 border border-transparent"
+                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25 dark:border-amber-500/20 shadow-[0_0_15px_rgba(202,160,53,0.02)] dark:shadow-[0_0_15px_rgba(202,160,53,0.05)]"
+                    : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-800 dark:hover:text-zinc-100 border-transparent"
                 }`}
               >
-                <Icon className={`h-4.5 w-4.5 transition-colors ${isActive ? "text-amber-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <Icon className={`h-4.5 w-4.5 transition-colors ${isActive ? "text-amber-600 dark:text-amber-400" : "text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"}`} />
                 <span>{item.name}</span>
               </Link>
             );
           })}
-
-          {/* Custom Set Price item is now dynamically mapped inside menuItems */}
         </nav>
 
         {/* Log Out */}
-        <div className="border-t border-zinc-800 p-4">
+        <div className="border-t border-zinc-200 dark:border-zinc-800 p-4">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/5 hover:text-red-300 border border-transparent hover:border-red-500/20 transition-all duration-200 cursor-pointer"
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/5 hover:text-red-700 dark:hover:text-red-300 border border-transparent hover:border-red-500/25 dark:hover:border-red-500/20 transition-all duration-200 cursor-pointer"
           >
             <LogOut className="h-4.5 w-4.5" />
             <span>Sign Out</span>
@@ -151,16 +163,16 @@ export default function DashboardLayout({
 
       {/* Mobile Navbar Header */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <header className="flex h-16 items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4 md:hidden">
+        <header className="flex h-16 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 md:hidden transition-colors duration-300">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500">
               <span className="text-lg font-serif">ॐ</span>
             </div>
-            <h1 className="text-sm font-serif tracking-wider text-amber-400">HOTEL DEVANG</h1>
+            <h1 className="text-sm font-serif tracking-wider text-amber-600 dark:text-amber-400">HOTEL DEVANG</h1>
           </div>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100 outline-none"
+            className="rounded-lg p-2 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-800 dark:hover:text-zinc-100 outline-none"
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -170,13 +182,13 @@ export default function DashboardLayout({
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-40 flex md:hidden">
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
-            <div className="relative flex w-64 max-w-xs flex-col bg-zinc-950 border-r border-zinc-800 p-6 z-50">
+            <div className="relative flex w-64 max-w-xs flex-col bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 p-6 z-50 transition-colors duration-300">
               <div className="flex items-center gap-3 mb-8">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500">
                   <span className="text-xl font-serif">ॐ</span>
                 </div>
                 <div>
-                  <h2 className="text-sm font-serif tracking-wider text-amber-400">DEVANG</h2>
+                  <h2 className="text-sm font-serif tracking-wider text-amber-600 dark:text-amber-400">DEVANG</h2>
                   <p className="text-[9px] tracking-wider text-zinc-500 uppercase">Dashboard</p>
                 </div>
               </div>
@@ -190,10 +202,10 @@ export default function DashboardLayout({
                       key={item.name}
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${
+                      className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium border ${
                         isActive
-                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25 dark:border-amber-500/20"
+                          : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-800 dark:hover:text-zinc-100 border-transparent"
                       }`}
                     >
                       <Icon className="h-5 w-5" />
@@ -203,10 +215,10 @@ export default function DashboardLayout({
                 })}
               </nav>
 
-              <div className="border-t border-zinc-800 pt-4 mt-6">
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-6">
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/5 hover:text-red-300"
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/5 dark:hover:text-red-300"
                 >
                   <LogOut className="h-5 w-5" />
                   <span>Sign Out</span>
@@ -217,10 +229,11 @@ export default function DashboardLayout({
         )}
 
         {/* Content view portal */}
-        <main className="flex-1 overflow-y-auto bg-zinc-950 p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-zinc-950 p-4 md:p-8 transition-colors duration-300">
           {children}
         </main>
       </div>
     </div>
   );
 }
+

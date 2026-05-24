@@ -288,6 +288,7 @@ export default function BlockedDatesManagement() {
                   id="startDate"
                   required
                   placeholder="dd/mm/yyyy"
+                  style={{ display: "none" }}
                   className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none"
                 />
               </div>
@@ -305,6 +306,7 @@ export default function BlockedDatesManagement() {
                   id="endDate"
                   required
                   placeholder="dd/mm/yyyy"
+                  style={{ display: "none" }}
                   className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none"
                 />
               </div>

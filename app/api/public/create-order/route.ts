@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { connectToDatabase } from "@/lib/db";
-import { Booking, BlockedDate, RoomPrice } from "@/lib/models/schema";
+import { Booking, BlockedDate, RoomPrice, SeasonalPrice } from "@/lib/models/schema";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
@@ -148,13 +148,46 @@ export async function POST(request: Request) {
       }
     }
 
-    // Validate rooms capacity and compute totals
+    // Validate rooms capacity and compute totals night-by-night
+    const dbPrices = await RoomPrice.find({});
+    const seasonalPrices = await SeasonalPrice.find({
+      startDate: { $lte: checkOut },
+      endDate: { $gte: checkIn }
+    });
+
+    const getNightlyBaseRate = (roomType: string, subtype: string, date: Date) => {
+      const isAC = subtype.includes("AC") && !subtype.includes("Non-AC");
+      const subtypeNormalized = isAC ? "AC" : "Non-AC";
+
+      // 1. Check for seasonal override first
+      const override = seasonalPrices.find(sp => 
+        sp.roomType === roomType && 
+        sp.subtype === subtypeNormalized && 
+        sp.startDate <= date && 
+        sp.endDate >= date
+      );
+      if (override) return override.price;
+
+      // 2. Fallback to standard DB price
+      const dbPriceMatch = dbPrices.find(p => p.roomType === roomType && p.subtype === subtypeNormalized);
+      if (dbPriceMatch) return dbPriceMatch.price;
+
+      // 3. Fallback to hardcoded defaults
+      switch (roomType) {
+        case "Standard": return isAC ? 1500 : 1200;
+        case "Deluxe": return isAC ? 1700 : 1400;
+        case "Super Deluxe": return isAC ? 1900 : 1600;
+        case "Suite": return 3000;
+        default: return 1500;
+      }
+    };
+
     let computedTotalAmount = 0;
     const timeDiff = Math.abs(checkOut.getTime() - checkIn.getTime());
     const nights = Math.round(timeDiff / (1000 * 60 * 60 * 24));
 
     for (const room of rooms) {
-      const { roomType, selectedSubtype, quantity, guests, extraMattress } = room;
+      const { roomType, selectedSubtype, quantity, guests } = room;
       
       if (!roomType || !selectedSubtype || !quantity || !guests) {
         return corsResponse(NextResponse.json({ success: false, error: "Missing parameters inside room details" }, { status: 400 }));
@@ -173,10 +206,18 @@ export async function POST(request: Request) {
         }, { status: 400 }));
       }
 
-      const baseRate = await getRoomRate(roomType, selectedSubtype);
+      // Calculate the fare night-by-night
+      let roomTotalRate = 0;
       const mattressCount = (guests > 2 && roomType !== "Standard") ? (guests - 2) : 0;
-      const rate = baseRate + (mattressCount * 350);
-      computedTotalAmount += rate * quantity * nights;
+      const mattressCharge = mattressCount * 350;
+
+      for (let i = 0; i < nights; i++) {
+        const nightDate = new Date(checkIn.getTime() + i * 24 * 60 * 60 * 1000);
+        const baseRate = getNightlyBaseRate(roomType, selectedSubtype, nightDate);
+        roomTotalRate += baseRate + mattressCharge;
+      }
+
+      computedTotalAmount += roomTotalRate * quantity;
     }
 
     // Generate Razorpay Order for the 50% advance booking payment

@@ -27,6 +27,10 @@ export default function SetPricesManagement() {
   const [newPrice, setNewPrice] = useState("");
   const [newReason, setNewReason] = useState("");
 
+  // Flatpickr instances references
+  const [startFp, setStartFp] = useState<any>(null);
+  const [endFp, setEndFp] = useState<any>(null);
+
   const fetchPrices = async () => {
     try {
       setLoading(true);
@@ -68,6 +72,122 @@ export default function SetPricesManagement() {
     fetchSeasonalPrices();
   }, []);
 
+  useEffect(() => {
+    if (loading) return;
+    
+    let activeStartFp: any = null;
+    let activeEndFp: any = null;
+
+    // Dynamically import flatpickr inside useEffect to bypass SSR window issues
+    import("flatpickr").then((module) => {
+      const fp = module.default;
+      
+      // Load flatpickr dark theme stylesheet
+      import("flatpickr/dist/themes/dark.css");
+
+      activeStartFp = fp("#seasonalStartDate", {
+        altInput: true,
+        altFormat: "d/m/Y",
+        dateFormat: "Y-m-d",
+        allowInput: true,
+        minDate: "today",
+        parseDate: (datestr) => {
+          if (datestr && datestr.includes("/")) {
+            const parts = datestr.split("/");
+            if (parts.length === 3) {
+              const day = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10) - 1;
+              const year = parseInt(parts[2], 10);
+              const d = new Date(year, month, day);
+              if (!isNaN(d.getTime())) return d;
+            }
+          }
+          return new Date(datestr);
+        },
+        onChange: (selectedDates, dateStr) => {
+          setNewStartDate(dateStr);
+          if (activeEndFp && selectedDates.length > 0) {
+            activeEndFp.set("minDate", dateStr);
+          }
+        }
+      });
+
+      activeEndFp = fp("#seasonalEndDate", {
+        altInput: true,
+        altFormat: "d/m/Y",
+        dateFormat: "Y-m-d",
+        allowInput: true,
+        minDate: "today",
+        parseDate: (datestr) => {
+          if (datestr && datestr.includes("/")) {
+            const parts = datestr.split("/");
+            if (parts.length === 3) {
+              const day = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10) - 1;
+              const year = parseInt(parts[2], 10);
+              const d = new Date(year, month, day);
+              if (!isNaN(d.getTime())) return d;
+            }
+          }
+          return new Date(datestr);
+        },
+        onChange: (selectedDates, dateStr) => {
+          setNewEndDate(dateStr);
+        }
+      });
+
+      setStartFp(activeStartFp);
+      setEndFp(activeEndFp);
+
+      // Auto-slash helper for typed date inputs
+      const setupAutoSlash = (element: HTMLInputElement, fpInstance: any) => {
+        if (!element) return;
+        element.addEventListener("input", function (e: any) {
+          let value = e.target.value;
+          let clean = value.replace(/\D/g, "");
+          if (clean.length > 8) {
+            clean = clean.slice(0, 8);
+          }
+          let formatted = "";
+          if (clean.length > 0) {
+            formatted += clean.slice(0, 2);
+          }
+          if (clean.length > 2) {
+            formatted += "/" + clean.slice(2, 4);
+          }
+          if (clean.length > 4) {
+            formatted += "/" + clean.slice(4, 8);
+          }
+          e.target.value = formatted;
+
+          // If a complete valid date is entered (10 chars), sync it to Flatpickr
+          if (formatted.length === 10) {
+            const parts = formatted.split("/");
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            const d = new Date(year, month, day);
+            if (!isNaN(d.getTime()) && year >= 2020) {
+              fpInstance.setDate(d, true); // true parameter triggers onChange
+            }
+          }
+        });
+      };
+
+      if (activeStartFp && activeStartFp.altInput) {
+        setupAutoSlash(activeStartFp.altInput, activeStartFp);
+      }
+      if (activeEndFp && activeEndFp.altInput) {
+        setupAutoSlash(activeEndFp.altInput, activeEndFp);
+      }
+    });
+
+    return () => {
+      if (activeStartFp) activeStartFp.destroy();
+      if (activeEndFp) activeEndFp.destroy();
+    };
+  }, [loading]);
+
   const handleAddSeasonal = async (e: React.FormEvent) => {
     e.preventDefault();
     setSeasonalError("");
@@ -101,6 +221,8 @@ export default function SetPricesManagement() {
         setNewReason("");
         setNewStartDate("");
         setNewEndDate("");
+        if (startFp) startFp.clear();
+        if (endFp) endFp.clear();
         fetchSeasonalPrices();
         setTimeout(() => setSeasonalSuccess(""), 4000);
       } else {
@@ -369,20 +491,20 @@ export default function SetPricesManagement() {
                   <div>
                     <label className="block text-[10px] font-semibold uppercase tracking-wider text-amber-500/80 mb-2">Start Date</label>
                     <input
-                      type="date"
+                      type="text"
+                      id="seasonalStartDate"
+                      placeholder="dd/mm/yyyy"
                       required
-                      value={newStartDate}
-                      onChange={(e) => setNewStartDate(e.target.value)}
                       className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50 focus:bg-zinc-950 cursor-pointer"
                     />
                   </div>
                   <div>
                     <label className="block text-[10px] font-semibold uppercase tracking-wider text-amber-500/80 mb-2">End Date (Incl.)</label>
                     <input
-                      type="date"
+                      type="text"
+                      id="seasonalEndDate"
+                      placeholder="dd/mm/yyyy"
                       required
-                      value={newEndDate}
-                      onChange={(e) => setNewEndDate(e.target.value)}
                       className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-xs text-white outline-none focus:border-amber-500/50 focus:bg-zinc-950 cursor-pointer"
                     />
                   </div>

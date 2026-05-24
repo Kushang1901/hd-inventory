@@ -3,7 +3,28 @@ import { signToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json();
+    const { username, password, recaptchaToken } = await request.json();
+
+    // Verify reCAPTCHA token if configured or fallback to provided secret
+    const recaptchaSecret = process.env.LOGIN_RECAPTCHA_SECRET_KEY || "6LffN_osAAAAAGIhL6CVegE9T9y0EguY8-VhxFIH";
+    if (recaptchaSecret) {
+      if (!recaptchaToken) {
+        return NextResponse.json(
+          { success: false, error: "Please complete the reCAPTCHA verification." },
+          { status: 400 }
+        );
+      }
+
+      const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${recaptchaToken}`;
+      const verifyRes = await fetch(verifyUrl, { method: "POST" });
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        return NextResponse.json(
+          { success: false, error: "reCAPTCHA verification failed. Please try again." },
+          { status: 400 }
+        );
+      }
+    }
 
     const expectedUsername = process.env.ADMIN_USERNAME || "admin";
     const expectedPassword = process.env.ADMIN_PASSWORD || "devang2026";

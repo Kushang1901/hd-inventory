@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
-import { Booking, BlockedDate, RoomPrice } from "@/lib/models/schema";
+import { Booking, BlockedDate, RoomPrice, SeasonalPrice } from "@/lib/models/schema";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
@@ -109,11 +109,36 @@ export async function GET(request: Request) {
       }
     });
 
-    // 4. Room Configuration Details - Dynamically queried from MongoDB
+    // 4. Room Configuration Details - Dynamically queried from MongoDB with seasonal overrides
     const dbPrices = await RoomPrice.find({});
+    const seasonalPrices = await SeasonalPrice.find({
+      startDate: { $lte: checkOut },
+      endDate: { $gte: checkIn }
+    });
+
+    const getAverageNightlyRate = (roomType: string, subtype: string, defaultVal: number) => {
+      const stdPriceMatch = dbPrices.find(p => p.roomType === roomType && p.subtype === subtype);
+      const standardRate = stdPriceMatch ? stdPriceMatch.price : defaultVal;
+
+      const numNights = Math.max(1, Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
+      let totalRateSum = 0;
+
+      for (let i = 0; i < numNights; i++) {
+        const nightDate = new Date(checkIn.getTime() + i * 24 * 60 * 60 * 1000);
+        const override = seasonalPrices.find(p => 
+          p.roomType === roomType && 
+          p.subtype === subtype && 
+          p.startDate <= nightDate && 
+          p.endDate >= nightDate
+        );
+        totalRateSum += override ? override.price : standardRate;
+      }
+
+      return Math.round(totalRateSum / numNights);
+    };
+
     const getDbPrice = (roomType: string, subtype: string, defaultVal: number) => {
-      const match = dbPrices.find(p => p.roomType === roomType && p.subtype === subtype);
-      return match ? match.price : defaultVal;
+      return getAverageNightlyRate(roomType, subtype, defaultVal);
     };
 
     const roomTypesMetadata = [

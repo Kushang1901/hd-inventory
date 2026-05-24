@@ -115,3 +115,28 @@ const RoomPriceSchema = new Schema<IRoomPrice>({
 });
 
 export const RoomPrice = mongoose.models.RoomPrice || mongoose.model<IRoomPrice>("RoomPrice", RoomPriceSchema);
+
+// Dynamic Seasonal/Future Pricing Model
+export interface ISeasonalPrice extends Document {
+  startDate: Date;       // start of override period (inclusive)
+  endDate: Date;         // end of override period (inclusive)
+  roomType: string;      // "Standard", "Deluxe", "Super Deluxe", "Suite"
+  subtype: string;       // "AC", "Non-AC"
+  price: number;
+  reason?: string;       // e.g. "Janmashtami Peak", "Diwali Holiday"
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const SeasonalPriceSchema = new Schema<ISeasonalPrice>({
+  startDate: { type: Date, required: true },
+  endDate: { type: Date, required: true },
+  roomType: { type: String, required: true },
+  subtype: { type: String, required: true },
+  price: { type: Number, required: true },
+  reason: { type: String, default: "" }
+}, {
+  timestamps: true
+});
+
+export const SeasonalPrice = mongoose.models.SeasonalPrice || mongoose.model<ISeasonalPrice>("SeasonalPrice", SeasonalPriceSchema);

@@ -14,10 +14,8 @@ import {
   Lock,
   DoorOpen
 } from "lucide-react";
-import { useTheme } from "../ThemeContext";
 
 export default function CalendarDashboard() {
-  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
   const [blockedDates, setBlockedDates] = useState<any[]>([]);
@@ -249,15 +247,15 @@ export default function CalendarDashboard() {
   const selectedDateStats = getDateStats(selectedDate);
 
   return (
-    <div className="space-y-8 animate-fadeIn text-sm text-zinc-700 dark:text-zinc-300 transition-colors duration-300">
+    <div className="space-y-8 animate-fadeIn text-sm text-zinc-300">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-serif text-zinc-900 dark:text-white font-semibold flex items-center gap-2 animate-fadeIn">
+          <h1 className="text-2xl md:text-3xl font-serif text-white font-semibold flex items-center gap-2">
             <CalendarIcon className="h-6 w-6 text-amber-500" />
             <span>Interactive Availability Calendar</span>
           </h1>
-          <p className="text-xs md:text-sm text-zinc-550 dark:text-zinc-500 mt-1">
+          <p className="text-xs md:text-sm text-zinc-500">
             Monitor real-time reservations, blocked dates, and available room allocations day by day.
           </p>
         </div>
@@ -266,25 +264,25 @@ export default function CalendarDashboard() {
       {loading ? (
         <div className="text-center py-28">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500 mx-auto mb-4"></div>
-          <p className="text-zinc-500 dark:text-zinc-400">Compiling occupancy calendar...</p>
+          <p className="text-zinc-500">Compiling occupancy calendar...</p>
         </div>
       ) : (
         <div className="grid gap-8 lg:grid-cols-3">
           
           {/* Column 1 & 2: Interactive Calendar Grid */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/10 backdrop-blur-md p-6 space-y-6 shadow-sm">
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 space-y-6">
               
               {/* Calendar Month Selector Header */}
-              <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/60 pb-4">
-                <h2 className="text-lg font-serif font-medium text-zinc-900 dark:text-white flex items-center gap-2">
+              <div className="flex items-center justify-between border-b border-zinc-800/60 pb-4">
+                <h2 className="text-lg font-serif font-medium text-white flex items-center gap-2">
                   <span>{currentMonth.toLocaleString("default", { month: "long" })}</span>
-                  <span className="text-amber-600 dark:text-amber-500 font-mono font-bold">{year}</span>
+                  <span className="text-amber-500 font-mono font-bold">{year}</span>
                 </h2>
                 <div className="flex gap-2">
                   <button 
                     onClick={handlePrevMonth}
-                    className="p-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 rounded-lg hover:border-amber-500/30 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition cursor-pointer shadow-sm animate-scaleUp"
+                    className="p-2 border border-zinc-800 bg-zinc-950/60 rounded-lg hover:border-amber-500/30 text-zinc-400 hover:text-white transition cursor-pointer"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -293,13 +291,13 @@ export default function CalendarDashboard() {
                       setCurrentMonth(new Date());
                       setSelectedDate(new Date());
                     }}
-                    className="px-3 py-1 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 text-xs font-medium rounded-lg hover:border-amber-500/30 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition cursor-pointer shadow-sm"
+                    className="px-3 py-1 border border-zinc-800 bg-zinc-950/60 text-xs font-medium rounded-lg hover:border-amber-500/30 text-zinc-400 hover:text-white transition cursor-pointer"
                   >
                     Today
                   </button>
                   <button 
                     onClick={handleNextMonth}
-                    className="p-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 rounded-lg hover:border-amber-500/30 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition cursor-pointer shadow-sm"
+                    className="p-2 border border-zinc-800 bg-zinc-950/60 rounded-lg hover:border-amber-500/30 text-zinc-400 hover:text-white transition cursor-pointer"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -307,7 +305,7 @@ export default function CalendarDashboard() {
               </div>
 
               {/* Day Headers */}
-              <div className="grid grid-cols-7 gap-1 text-center font-semibold text-zinc-450 dark:text-zinc-500 text-[10px] uppercase tracking-wider mb-2">
+              <div className="grid grid-cols-7 gap-1 text-center font-semibold text-zinc-500 text-[10px] uppercase tracking-wider mb-2">
                 <div>Sun</div>
                 <div>Mon</div>
                 <div>Tue</div>
@@ -326,45 +324,35 @@ export default function CalendarDashboard() {
                   const dayToday = isToday(date);
 
                   // Color mapping based on occupancy status
-                  let statusBorder = theme === "dark" ? "border-zinc-800/40" : "border-zinc-200";
+                  let statusBorder = "border-zinc-800/40";
                   let statusGlow = "";
                   let statusLabel = "";
                   let dotColor = "bg-zinc-500";
 
                   if (isCurrentMonth) {
                     if (dayStats.status === "Fully Blocked") {
-                      statusBorder = theme === "dark" 
-                        ? "border-red-955 bg-red-950/5 hover:bg-red-955/10" 
-                        : "border-red-200 bg-red-50/55 hover:bg-red-100/50";
+                      statusBorder = "border-red-950 bg-red-950/5 hover:bg-red-950/10";
                       statusGlow = "shadow-[inset_0_0_8px_rgba(239,68,68,0.05)]";
                       dotColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
                       statusLabel = "Blocked";
                     } else if (dayStats.status === "Sold Out") {
-                      statusBorder = theme === "dark" 
-                        ? "border-red-900 bg-red-950/5 hover:bg-red-950/10" 
-                        : "border-red-300 bg-red-50/55 hover:bg-red-100/50";
+                      statusBorder = "border-red-900 bg-red-950/5 hover:bg-red-950/10";
                       statusGlow = "shadow-[inset_0_0_8px_rgba(239,68,68,0.05)]";
                       dotColor = "bg-red-600 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
                       statusLabel = "Sold Out";
                     } else if (dayStats.status === "Partially Booked") {
-                      statusBorder = theme === "dark" 
-                        ? "border-amber-800/60 bg-amber-955/5 hover:bg-amber-955/10" 
-                        : "border-amber-250 bg-amber-50/45 hover:bg-amber-100/30";
+                      statusBorder = "border-amber-800/60 bg-amber-950/5 hover:bg-amber-950/10";
                       statusGlow = "shadow-[inset_0_0_8px_rgba(245,158,11,0.05)]";
                       dotColor = "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]";
                       statusLabel = `${dayStats.totalBooked} Room${dayStats.totalBooked > 1 ? "s" : ""} Booked`;
                     } else {
-                      statusBorder = theme === "dark" 
-                        ? "border-zinc-800/80 bg-zinc-950/40 hover:bg-zinc-900/20" 
-                        : "border-zinc-200 bg-white hover:bg-zinc-50 shadow-sm";
+                      statusBorder = "border-zinc-800/80 bg-zinc-950/40 hover:bg-zinc-900/20";
                       dotColor = "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]";
                       statusLabel = "All Available";
                     }
                   } else {
                     // Out-of-month padding
-                    statusBorder = theme === "dark" 
-                      ? "border-zinc-900/20 bg-zinc-950/10 opacity-25" 
-                      : "border-zinc-100 bg-zinc-50 opacity-30";
+                    statusBorder = "border-zinc-900/20 bg-zinc-950/10 opacity-25";
                   }
 
                   return (
@@ -376,7 +364,7 @@ export default function CalendarDashboard() {
                         isCurrentMonth ? "cursor-pointer" : "cursor-default"
                       } ${statusBorder} ${statusGlow} ${
                         daySelected 
-                          ? "!border-amber-500 ring-1 ring-amber-500/25 dark:ring-amber-500/20 shadow-[0_0_15px_rgba(202,160,53,0.08)] dark:shadow-[0_0_15px_rgba(202,160,53,0.15)] bg-zinc-50 dark:bg-zinc-900/40" 
+                          ? "!border-amber-500 ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(202,160,53,0.15)] bg-zinc-900/40" 
                           : ""
                       }`}
                     >
@@ -384,12 +372,12 @@ export default function CalendarDashboard() {
                         <span 
                           className={`font-serif text-sm font-semibold ${
                             daySelected 
-                              ? "text-amber-600 dark:text-amber-400" 
+                              ? "text-amber-400" 
                               : dayToday 
-                                ? "text-amber-600 dark:text-amber-500 border border-amber-500/45 dark:border-amber-500/40 rounded px-1.5 py-0.5 bg-amber-500/10 text-xs" 
+                                ? "text-amber-500 border border-amber-500/40 rounded px-1.5 py-0.5 bg-amber-500/10 text-xs" 
                                 : isCurrentMonth 
-                                  ? "text-zinc-800 dark:text-zinc-100" 
-                                  : "text-zinc-400 dark:text-zinc-700"
+                                  ? "text-zinc-100" 
+                                  : "text-zinc-700"
                           }`}
                         >
                           {date.getDate()}
@@ -401,7 +389,7 @@ export default function CalendarDashboard() {
                       </div>
 
                       {isCurrentMonth && (
-                        <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-medium truncate w-full mt-1.5 leading-none block">
+                        <span className="text-[9px] text-zinc-500 font-medium truncate w-full mt-1.5 leading-none block">
                           {statusLabel}
                         </span>
                       )}
@@ -411,7 +399,7 @@ export default function CalendarDashboard() {
               </div>
 
               {/* Status Legend */}
-              <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-zinc-200 dark:border-zinc-800/40 text-xs text-zinc-500 dark:text-zinc-400">
+              <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-zinc-800/40 text-xs text-zinc-500">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
                   <span>Fully Available</span>
@@ -430,13 +418,13 @@ export default function CalendarDashboard() {
           </div>
 
           {/* Column 3: Live Selected Date Occupancy Panel */}
-          <div className="space-y-6 animate-scaleUp">
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/10 backdrop-blur-md p-6 space-y-6 shadow-sm">
+          <div className="space-y-6">
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 space-y-6">
               
               {/* Card Header displaying Date */}
-              <div className="border-b border-zinc-200 dark:border-zinc-800/60 pb-4">
-                <h3 className="text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider font-semibold">Live Occupancy</h3>
-                <h2 className="text-lg font-serif text-zinc-900 dark:text-white font-medium mt-1">
+              <div className="border-b border-zinc-800/60 pb-4">
+                <h3 className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Live Occupancy</h3>
+                <h2 className="text-lg font-serif text-white font-medium mt-1">
                   {selectedDate.toLocaleDateString("en-US", { 
                     weekday: "long", 
                     month: "long", 
@@ -449,12 +437,12 @@ export default function CalendarDashboard() {
               {/* Day overall status banner */}
               <div className={`rounded-lg border p-3.5 flex items-center gap-3 ${
                 selectedDateStats.status === "Fully Blocked"
-                  ? "bg-red-500/10 border-red-500/20 text-red-650 dark:text-red-400"
+                  ? "bg-red-500/10 border-red-500/20 text-red-400"
                   : selectedDateStats.status === "Sold Out"
-                    ? "bg-red-500/10 border-red-500/20 text-red-650 dark:text-red-400"
+                    ? "bg-red-500/10 border-red-500/20 text-red-400"
                     : selectedDateStats.status === "Partially Booked"
-                      ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
-                      : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                      ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                      : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
               }`}>
                 {selectedDateStats.status === "Fully Blocked" ? (
                   <Lock className="h-5 w-5 shrink-0" />
@@ -487,20 +475,20 @@ export default function CalendarDashboard() {
                   const percent = Math.min(100, Math.round((room.bookedCount / room.totalCapacity) * 100));
                   
                   return (
-                    <div key={room.roomType} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-955/40 p-3 space-y-2 shadow-sm">
+                    <div key={room.roomType} className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-2">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Layers className="h-3.5 w-3.5 text-amber-500" />
-                          <span className="font-semibold text-zinc-900 dark:text-white text-xs">{room.roomType} Room</span>
+                          <span className="font-semibold text-white text-xs">{room.roomType} Room</span>
                         </div>
                         <span className={`text-[10px] rounded-full border px-2 py-0.5 font-bold uppercase ${
                           room.isBlocked
-                            ? "bg-red-500/10 text-red-650 dark:text-red-400 border-red-500/20"
+                            ? "bg-red-500/10 text-red-400 border-red-500/20"
                             : room.availableCount === 0
-                              ? "bg-red-500/10 text-red-650 dark:text-red-400 border-red-500/20"
+                              ? "bg-red-500/10 text-red-400 border-red-500/20"
                               : room.bookedCount > 0
-                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                         }`}>
                           {room.isBlocked 
                             ? "Blocked" 
@@ -511,7 +499,7 @@ export default function CalendarDashboard() {
                       </div>
 
                       {/* Info lines */}
-                      <div className="flex justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <div className="flex justify-between text-[11px] text-zinc-400">
                         <span>Booked: {room.bookedCount} / {room.totalCapacity} unit{room.totalCapacity > 1 ? "s" : ""}</span>
                         {!room.isBlocked && (
                           <span>
@@ -522,7 +510,7 @@ export default function CalendarDashboard() {
                       </div>
 
                       {/* Progress Bar */}
-                      <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-900 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
                         <div 
                           className={`h-full rounded-full transition-all duration-300 ${
                             room.isBlocked 
@@ -538,7 +526,7 @@ export default function CalendarDashboard() {
                       </div>
 
                       {room.isBlocked && (
-                        <div className="text-[10px] text-red-600 dark:text-red-400 bg-red-500/5 border border-red-500/10 rounded p-1.5 italic">
+                        <div className="text-[10px] text-red-400 bg-red-500/5 border border-red-500/10 rounded p-1.5 italic">
                           Block Reason: {room.blockReason}
                         </div>
                       )}
@@ -551,31 +539,31 @@ export default function CalendarDashboard() {
               <div className="space-y-3 pt-2">
                 <h4 className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Active Bookings Today</h4>
                 {selectedDateStats.bookings.length === 0 ? (
-                  <div className="text-center py-4 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs flex items-center justify-center gap-2">
+                  <div className="text-center py-4 rounded-lg border border-dashed border-zinc-800 text-zinc-500 text-xs flex items-center justify-center gap-2">
                     <DoorOpen className="h-4 w-4" />
                     <span>No check-ins hosted today.</span>
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
                     {selectedDateStats.bookings.map((b) => (
-                      <div key={b._id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 p-3 space-y-2 text-xs shadow-sm">
+                      <div key={b._id} className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 space-y-2 text-xs">
                         <div className="flex justify-between items-start">
                           <div>
-                            <span className="font-semibold text-zinc-900 dark:text-white text-xs">{b.guestName}</span>
-                            <span className="block text-[9px] font-mono text-amber-600 dark:text-amber-500 mt-0.5">{b.bookingId}</span>
+                            <span className="font-semibold text-white text-xs">{b.guestName}</span>
+                            <span className="block text-[9px] font-mono text-amber-500 mt-0.5">{b.bookingId}</span>
                           </div>
-                          <span className="rounded bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 text-[9px] text-emerald-650 dark:text-emerald-400 font-semibold font-mono uppercase">
+                          <span className="rounded bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 text-[9px] text-emerald-400 font-semibold font-mono uppercase">
                             {b.paymentStatus}
                           </span>
                         </div>
 
-                        <div className="space-y-1 text-zinc-500 dark:text-zinc-400 text-[11px]">
+                        <div className="space-y-1 text-zinc-400 text-[11px]">
                           <div className="flex items-center gap-1.5">
-                            <User className="h-3 w-3 text-zinc-400" />
+                            <User className="h-3 w-3 text-zinc-500" />
                             <span>Room Config: {b.roomType}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Phone className="h-3 w-3 text-zinc-400" />
+                            <Phone className="h-3 w-3 text-zinc-500" />
                             <span>Phone: {b.phone}</span>
                           </div>
                         </div>
@@ -591,7 +579,7 @@ export default function CalendarDashboard() {
                   <h4 className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Active Date Blocks Today</h4>
                   <div className="space-y-2">
                     {selectedDateStats.blocks.map((block) => (
-                      <div key={block._id} className="rounded-lg border border-red-500/20 bg-red-950/5 p-3 space-y-1.5 text-xs text-red-650 dark:text-red-400">
+                      <div key={block._id} className="rounded-lg border border-red-500/20 bg-red-950/5 p-3 space-y-1.5 text-xs text-red-400">
                         <div className="flex items-center justify-between">
                           <span className="font-bold uppercase tracking-wider text-[9px]">
                             {block.roomType === "All" ? "Entire Hotel Block" : `${block.roomType} Room Block`}

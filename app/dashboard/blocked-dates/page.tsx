@@ -13,11 +13,8 @@ import {
   X,
   Clock
 } from "lucide-react";
-import { useTheme } from "../ThemeContext";
 
 export default function BlockedDatesManagement() {
-  const { theme } = useTheme();
-
   const getLocalDateString = (d: Date = new Date()) => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -55,14 +52,6 @@ export default function BlockedDatesManagement() {
     fetchBlocks();
   }, []);
 
-  // Manage Flatpickr theme stylesheet based on active context theme
-  useEffect(() => {
-    const darkThemeEl = document.getElementById("flatpickr-dark-css");
-    if (darkThemeEl) {
-      (darkThemeEl as any).disabled = theme !== "dark";
-    }
-  }, [theme]);
-
   // Load Flatpickr dynamically client-side and initialize pickers
   useEffect(() => {
     let isMounted = true;
@@ -81,7 +70,6 @@ export default function BlockedDatesManagement() {
         darkTheme.id = "flatpickr-dark-css";
         darkTheme.rel = "stylesheet";
         darkTheme.href = "https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css";
-        darkTheme.disabled = theme !== "dark";
         document.head.appendChild(darkTheme);
       }
       
@@ -220,20 +208,20 @@ export default function BlockedDatesManagement() {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn transition-colors duration-300">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-serif text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-serif text-white font-semibold flex items-center gap-2">
           <CalendarOff className="h-6 w-6 text-amber-500" />
           <span>Date & Room Blocker</span>
         </h1>
-        <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400">Disable check-ins for specific dates when rooms are fully booked or undergoing maintenance.</p>
+        <p className="text-xs md:text-sm text-zinc-500">Disable check-ins for specific dates when rooms are fully booked or undergoing maintenance.</p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Add Block Form Card */}
-        <div id="block-form-card" className="rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/10 backdrop-blur-md p-6 space-y-6 self-start scroll-mt-20 shadow-sm">
-          <h2 className="text-lg font-serif text-zinc-900 dark:text-white flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800/60 pb-3">
+        <div id="block-form-card" className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 space-y-6 self-start scroll-mt-20">
+          <h2 className="text-lg font-serif text-white flex items-center gap-2 border-b border-zinc-800/60 pb-3">
             {editingBlockId ? (
               <Pencil className="h-4.5 w-4.5 text-amber-500" />
             ) : (
@@ -242,65 +230,65 @@ export default function BlockedDatesManagement() {
             <span>{editingBlockId ? "Edit Date Block" : "Create Date Block"}</span>
           </h2>
 
-          <form onSubmit={handleFormSubmit} className="space-y-4 text-sm text-zinc-650 dark:text-zinc-300">
+          <form onSubmit={handleFormSubmit} className="space-y-4 text-sm text-zinc-300">
             {error && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             {success && (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-400">
                 {success}
               </div>
             )}
 
             {/* Start Date */}
             <div>
-              <label className="block text-xs uppercase tracking-wider text-amber-600 dark:text-amber-500/80 mb-2 font-semibold">
+              <label className="block text-xs uppercase tracking-wider text-amber-500/80 mb-2 font-semibold">
                 Start Date (Check-In)
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
                 <input
                   type="text"
                   id="startDate"
                   required
                   placeholder="dd/mm/yyyy"
-                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-805 dark:text-zinc-200 outline-none focus:border-amber-500/50 appearance-none shadow-sm"
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none"
                 />
               </div>
             </div>
 
             {/* End Date */}
             <div>
-              <label className="block text-xs uppercase tracking-wider text-amber-600 dark:text-amber-500/80 mb-2 font-semibold">
+              <label className="block text-xs uppercase tracking-wider text-amber-500/80 mb-2 font-semibold">
                 End Date (Check-Out)
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
                 <input
                   type="text"
                   id="endDate"
                   required
                   placeholder="dd/mm/yyyy"
-                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955/60 pl-10 pr-4 py-2.5 text-zinc-805 dark:text-zinc-200 outline-none focus:border-amber-500/50 appearance-none shadow-sm"
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none"
                 />
               </div>
             </div>
 
             {/* Block Scope / Room Type */}
             <div>
-              <label className="block text-xs uppercase tracking-wider text-amber-600 dark:text-amber-500/80 mb-2 font-semibold">
+              <label className="block text-xs uppercase tracking-wider text-amber-500/80 mb-2 font-semibold">
                 Scope / Room Type
               </label>
               <div className="relative">
-                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
+                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
                 <select
                   value={roomType}
                   onChange={(e) => setRoomType(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-700 dark:text-zinc-200 outline-none focus:border-amber-500/50 appearance-none cursor-pointer shadow-sm"
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 pl-10 pr-4 py-2.5 text-zinc-200 outline-none focus:border-amber-500/50 appearance-none cursor-pointer"
                 >
                   <option value="All">Entire Hotel (All Rooms)</option>
                   <option value="Standard">Standard Rooms Only</option>
@@ -313,7 +301,7 @@ export default function BlockedDatesManagement() {
 
             {/* Notes/Reason */}
             <div>
-              <label className="block text-xs uppercase tracking-wider text-amber-600 dark:text-amber-500/80 mb-2 font-semibold">
+              <label className="block text-xs uppercase tracking-wider text-amber-500/80 mb-2 font-semibold">
                 Reason / Note
               </label>
               <textarea
@@ -321,7 +309,7 @@ export default function BlockedDatesManagement() {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
-                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955/60 p-3 text-zinc-800 dark:text-zinc-200 outline-none focus:border-amber-500/50 resize-none shadow-sm"
+                className="w-full rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-zinc-200 outline-none focus:border-amber-500/50 resize-none"
               />
             </div>
 
@@ -344,7 +332,7 @@ export default function BlockedDatesManagement() {
                     setReason("");
                     setRoomType("All");
                   }}
-                  className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium px-4 py-3 text-xs tracking-wider uppercase transition cursor-pointer shadow-sm"
+                  className="rounded-lg border border-zinc-700 bg-zinc-900/40 hover:bg-zinc-800 text-zinc-300 font-medium px-4 py-3 text-xs tracking-wider uppercase transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -354,8 +342,8 @@ export default function BlockedDatesManagement() {
         </div>
 
         {/* Active Blocks List panel */}
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/10 backdrop-blur-md p-6 lg:col-span-2 space-y-6 shadow-sm">
-          <h2 className="text-lg font-serif text-zinc-900 dark:text-white flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800/60 pb-3">
+        <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 lg:col-span-2 space-y-6">
+          <h2 className="text-lg font-serif text-white flex items-center gap-2 border-b border-zinc-800/60 pb-3">
             <CalendarOff className="h-4.5 w-4.5 text-amber-500" />
             <span>Active Block Registry</span>
           </h2>
@@ -366,34 +354,34 @@ export default function BlockedDatesManagement() {
               <p className="text-zinc-500 text-sm">Querying database...</p>
             </div>
           ) : blocks.length === 0 ? (
-            <div className="text-center py-20 text-zinc-500 dark:text-zinc-400 text-sm border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg">
+            <div className="text-center py-20 text-zinc-500 text-sm border border-dashed border-zinc-800 rounded-lg">
               No date blocks are currently active. All rooms are open for public booking!
             </div>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/40 shadow-sm">
+            <div className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/40">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-zinc-200 dark:border-zinc-800 text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-semibold bg-zinc-50 dark:bg-zinc-950">
+                    <tr className="border-b border-zinc-800 text-[10px] uppercase tracking-wider text-zinc-500 font-semibold bg-zinc-950">
                       <th className="px-6 py-4">Blocked Dates</th>
                       <th className="px-6 py-4">Block Scope</th>
                       <th className="px-6 py-4">Reason / Notes</th>
                       <th className="px-6 py-4"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-150 dark:divide-zinc-800/40 text-zinc-600 dark:text-zinc-300">
+                  <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
                     {blocks.map((b) => (
                       <tr 
                         key={b._id} 
-                        className="hover:bg-zinc-50 dark:hover:bg-zinc-900/20 hover:cursor-pointer transition-colors"
+                        className="hover:bg-zinc-900/20 hover:cursor-pointer transition-colors"
                         onClick={() => setSelectedPreviewBlock(b)}
                         title="Click to view full block details"
                       >
                         <td className="px-6 py-4">
-                          <div className="font-semibold text-zinc-900 dark:text-white">
+                          <div className="font-semibold text-white">
                             {new Date(b.startDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
                           </div>
-                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          <div className="text-[10px] text-zinc-500 mt-0.5">
                             to {new Date(b.endDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
                           </div>
                         </td>
@@ -401,14 +389,14 @@ export default function BlockedDatesManagement() {
                           <span 
                             className={`inline-flex rounded-full border px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${
                               b.roomType === "All" 
-                                ? "bg-red-500/10 text-red-650 dark:text-red-400 border-red-500/20" 
-                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                ? "bg-red-500/10 text-red-400 border-red-500/20" 
+                                : "bg-amber-500/10 text-amber-400 border-amber-500/20"
                             }`}
                           >
                             {b.roomType === "All" ? "Entire Hotel" : `${b.roomType} Rooms`}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-xs text-zinc-500 dark:text-zinc-400 italic max-w-xs truncate">
+                        <td className="px-6 py-4 text-xs text-zinc-400 italic max-w-xs truncate">
                           {b.reason || "No notes"}
                         </td>
                         <td className="px-6 py-4 text-right flex justify-end gap-1">
@@ -422,7 +410,7 @@ export default function BlockedDatesManagement() {
                               setEditingBlockId(b._id);
                               document.getElementById("block-form-card")?.scrollIntoView({ behavior: "smooth" });
                             }}
-                            className="rounded p-2 text-zinc-400 dark:text-zinc-500 hover:bg-amber-500/10 hover:text-amber-650 dark:hover:text-amber-400 transition cursor-pointer"
+                            className="rounded p-2 text-zinc-500 hover:bg-amber-500/10 hover:text-amber-400 transition cursor-pointer"
                             title="Edit date block"
                           >
                             <Pencil className="h-4 w-4" />
@@ -432,7 +420,7 @@ export default function BlockedDatesManagement() {
                               e.stopPropagation();
                               handleRemoveBlock(b._id);
                             }}
-                            className="rounded p-2 text-zinc-400 dark:text-zinc-500 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
+                            className="rounded p-2 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer"
                             title="Remove date block"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -455,21 +443,21 @@ export default function BlockedDatesManagement() {
           onClick={() => setSelectedPreviewBlock(null)}
         >
           <div 
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-[0_20px_50px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scaleUp text-sm text-zinc-700 dark:text-zinc-300"
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scaleUp text-sm text-zinc-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Decorative background glow */}
             <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-gradient-to-br from-amber-500/10 to-red-600/10 blur-xl pointer-events-none"></div>
             
             {/* Header */}
-            <div className="border-b border-zinc-200 dark:border-zinc-800/80 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-serif text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
+            <div className="border-b border-zinc-800/80 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-serif text-white font-semibold flex items-center gap-2">
                 <CalendarOff className="h-5 w-5 text-amber-500" />
                 <span>Date Block Specifications</span>
               </h3>
               <button 
                 onClick={() => setSelectedPreviewBlock(null)}
-                className="rounded-lg p-1.5 text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white transition cursor-pointer"
+                className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -479,8 +467,8 @@ export default function BlockedDatesManagement() {
             <div className="p-6 space-y-6">
               
               {/* Date Highlight Box */}
-              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/20 p-5 space-y-3 relative overflow-hidden">
-                <div className="absolute right-4 top-4 text-zinc-300 dark:text-zinc-800 font-mono font-bold text-5xl select-none pointer-events-none opacity-40">
+              <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-5 space-y-3 relative overflow-hidden">
+                <div className="absolute right-4 top-4 text-zinc-800 font-mono font-bold text-5xl select-none pointer-events-none opacity-40">
                   {(() => {
                     const startStr = selectedPreviewBlock.startDate.substring(0, 10);
                     const endStr = selectedPreviewBlock.endDate.substring(0, 10);
@@ -497,18 +485,18 @@ export default function BlockedDatesManagement() {
                   })()}
                 </div>
                 
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-500/80 block">Blocked Duration</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500/80 block">Blocked Duration</span>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
                   <div>
                     <span className="text-[10px] text-zinc-500 block uppercase font-semibold">Check-In</span>
-                    <span className="font-semibold text-zinc-900 dark:text-white text-base">
+                    <span className="font-semibold text-white text-base">
                       {new Date(selectedPreviewBlock.startDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" })}
                     </span>
                   </div>
-                  <div className="hidden sm:block text-zinc-400 dark:text-zinc-600 font-serif text-xl select-none">➔</div>
+                  <div className="hidden sm:block text-zinc-600 font-serif text-xl select-none">➔</div>
                   <div>
                     <span className="text-[10px] text-zinc-500 block uppercase font-semibold">Check-Out</span>
-                    <span className="font-semibold text-zinc-900 dark:text-white text-base">
+                    <span className="font-semibold text-white text-base">
                       {new Date(selectedPreviewBlock.endDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" })}
                     </span>
                   </div>
@@ -517,19 +505,19 @@ export default function BlockedDatesManagement() {
 
               {/* Scope Card */}
               <div className="space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-500/80 block">Scope of Restriction</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500/80 block">Scope of Restriction</span>
                 <div className="flex items-center gap-3">
                   <span 
                     className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
                       selectedPreviewBlock.roomType === "All" 
-                        ? "bg-red-500/10 text-red-650 dark:text-red-400 border-red-500/20" 
-                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                        ? "bg-red-500/10 text-red-400 border-red-500/20" 
+                        : "bg-amber-500/10 text-amber-400 border-amber-500/20"
                     }`}
                   >
                     {selectedPreviewBlock.roomType === "All" ? "Entire Hotel Blocked" : `${selectedPreviewBlock.roomType} Rooms Blocked`}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                <p className="text-xs text-zinc-500 leading-relaxed">
                   {selectedPreviewBlock.roomType === "All" 
                     ? "All rooms and classifications (Standard, Deluxe, Super Deluxe, Suite) are completely locked. Guests cannot select check-in dates matching this window."
                     : `Only the ${selectedPreviewBlock.roomType} room category is restricted. Other room categories remain open and searchable on public booking wizards.`}
@@ -538,10 +526,10 @@ export default function BlockedDatesManagement() {
 
               {/* Reason card */}
               <div className="space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-500/80 block">Reason / Administrative Notes</span>
-                <div className="rounded-xl border border-amber-500/20 dark:border-amber-500/10 bg-amber-500/5 p-4 italic text-zinc-700 dark:text-zinc-300 relative min-h-[60px]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500/80 block">Reason / Administrative Notes</span>
+                <div className="rounded-xl border border-amber-500/10 bg-amber-500/5 p-4 italic text-zinc-300 relative min-h-[60px]">
                   <span className="absolute left-2 top-0 text-amber-500/20 text-4xl select-none font-serif leading-none">“</span>
-                  <p className="pl-4 py-1 text-zinc-700 dark:text-zinc-300 leading-relaxed font-serif text-sm">
+                  <p className="pl-4 py-1 text-zinc-300 leading-relaxed font-serif text-sm">
                     {selectedPreviewBlock.reason || "No specific reason or administrative notes were registered for this block window."}
                   </p>
                 </div>
@@ -549,7 +537,7 @@ export default function BlockedDatesManagement() {
 
               {/* Audit info */}
               {selectedPreviewBlock.createdAt && (
-                <div className="flex items-center gap-1.5 text-zinc-450 dark:text-zinc-500 text-[10px]">
+                <div className="flex items-center gap-1.5 text-zinc-500 text-[10px]">
                   <Clock className="h-3.5 w-3.5" />
                   <span>Registered: {new Date(selectedPreviewBlock.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
                 </div>
@@ -558,14 +546,14 @@ export default function BlockedDatesManagement() {
             </div>
 
             {/* Footer controls */}
-            <div className="border-t border-zinc-200 dark:border-zinc-800/80 px-6 py-4 bg-zinc-50 dark:bg-zinc-950/50 flex flex-wrap gap-2 items-center justify-between">
+            <div className="border-t border-zinc-800/80 px-6 py-4 bg-zinc-950/50 flex flex-wrap gap-2 items-center justify-between">
               <button
                 onClick={() => {
                   const id = selectedPreviewBlock._id;
                   setSelectedPreviewBlock(null);
                   handleRemoveBlock(id);
                 }}
-                className="rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-650 dark:text-red-400 text-xs font-semibold px-4 py-2.5 transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+                className="rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold px-4 py-2.5 transition cursor-pointer flex items-center gap-1.5 active:scale-95"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>Lift Block</span>
@@ -582,7 +570,7 @@ export default function BlockedDatesManagement() {
                     setSelectedPreviewBlock(null);
                     document.getElementById("block-form-card")?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold px-4 py-2.5 transition cursor-pointer flex items-center gap-1.5 active:scale-95 shadow-sm"
+                  className="rounded-lg border border-zinc-700 bg-zinc-900/40 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold px-4 py-2.5 transition cursor-pointer flex items-center gap-1.5 active:scale-95"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   <span>Edit Block</span>
@@ -590,7 +578,7 @@ export default function BlockedDatesManagement() {
                 
                 <button
                   onClick={() => setSelectedPreviewBlock(null)}
-                  className="rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-955 dark:text-zinc-950 font-bold text-xs px-5 py-2.5 transition cursor-pointer active:scale-95"
+                  className="rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs px-5 py-2.5 transition cursor-pointer active:scale-95"
                 >
                   Close
                 </button>

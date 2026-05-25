@@ -91,7 +91,7 @@ async function sendAutoWhatsAppReceipt(booking: any) {
 }
 
 async function sendOwnerWhatsAppNotification(booking: any) {
-  const serviceUrl = process.env.WHATSAPP_SERVICE_URL || "https://hotel-devang.onrender.com";
+  const serviceUrl = process.env.WHATSAPP_SERVICE_URL || "https://hotel-booking-1-gg1m.onrender.com";
   try {
     console.log(`Sending owner WhatsApp notification request to: ${serviceUrl}/api/whatsapp/notify...`);
     const response = await fetch(`${serviceUrl}/api/whatsapp/notify`, {

@@ -290,13 +290,13 @@ export async function POST(request: Request) {
 
     await newBooking.save();
 
-    // Fire-and-forget background auto-WhatsApp receipt dispatcher
-    sendAutoWhatsAppReceipt(newBooking).catch(err => {
+    // Await background auto-WhatsApp receipt dispatcher
+    await sendAutoWhatsAppReceipt(newBooking).catch(err => {
       console.error("WhatsApp auto-dispatch background error:", err);
     });
-
-    // Notify Owner on WhatsApp via our Express service
-    sendOwnerWhatsAppNotification(newBooking).catch(err => {
+ 
+    // Await notifying Owner on WhatsApp via our Express service
+    await sendOwnerWhatsAppNotification(newBooking).catch(err => {
       console.error("Failed to trigger owner WhatsApp notification background task:", err);
     });
 

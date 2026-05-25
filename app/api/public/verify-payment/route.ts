@@ -90,6 +90,38 @@ async function sendAutoWhatsAppReceipt(booking: any) {
   }
 }
 
+async function sendOwnerWhatsAppNotification(booking: any) {
+  const serviceUrl = process.env.WHATSAPP_SERVICE_URL || "http://localhost:3000";
+  try {
+    console.log(`Sending owner WhatsApp notification request to: ${serviceUrl}/api/whatsapp/notify...`);
+    const response = await fetch(`${serviceUrl}/api/whatsapp/notify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        bookingId: booking.bookingId,
+        guestName: booking.guestName,
+        phone: booking.phone,
+        roomType: booking.roomType,
+        selectedSubtype: booking.selectedSubtype,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        totalAmount: booking.totalAmount,
+        paidAmount: booking.paidAmount,
+        dueAmount: booking.dueAmount,
+        paymentStatus: booking.paymentStatus,
+        specialRequests: booking.specialRequests,
+        rooms: booking.rooms
+      })
+    });
+    const data = await response.json();
+    console.log("Owner WhatsApp notification response:", data);
+  } catch (error) {
+    console.error("Failed to notify owner via Express WhatsApp service:", error);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     await connectToDatabase();
@@ -261,6 +293,11 @@ export async function POST(request: Request) {
     // Fire-and-forget background auto-WhatsApp receipt dispatcher
     sendAutoWhatsAppReceipt(newBooking).catch(err => {
       console.error("WhatsApp auto-dispatch background error:", err);
+    });
+
+    // Notify Owner on WhatsApp via our Express service
+    sendOwnerWhatsAppNotification(newBooking).catch(err => {
+      console.error("Failed to trigger owner WhatsApp notification background task:", err);
     });
 
     return corsResponse(NextResponse.json({

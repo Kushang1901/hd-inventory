@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { connectToDatabase } from "@/lib/db";
-import { Booking, RoomPrice } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
   return handleOptions();
 }
-
 
 // Price lookup helper (server-side safety verification)
 async function getRoomRate(roomType: string, subtype: string): Promise<number> {
@@ -15,7 +13,9 @@ async function getRoomRate(roomType: string, subtype: string): Promise<number> {
   const subtypeNormalized = isAC ? "AC" : "Non-AC";
   
   try {
-    const record = await RoomPrice.findOne({ roomType, subtype: subtypeNormalized });
+    const record = await prisma.roomPrice.findFirst({
+      where: { roomType, subtype: subtypeNormalized }
+    });
     if (record) {
       return record.price;
     }
@@ -169,10 +169,12 @@ export async function POST(request: Request) {
     }
 
     // Secondary Overbooking Validation Checks
-    const activeOverlappingBookings = await Booking.find({
-      bookingStatus: { $ne: "Cancelled" },
-      checkIn: { $lt: checkOut },
-      checkOut: { $gt: checkIn }
+    const activeOverlappingBookings = await prisma.booking.findMany({
+      where: {
+        bookingStatus: { not: "Cancelled" },
+        checkIn: { lt: checkOut },
+        checkOut: { gt: checkIn }
+      }
     });
 
     const totalCapacities: { [key: string]: number } = {
@@ -268,42 +270,42 @@ export async function POST(request: Request) {
     const mainRoomType = rooms.map((r: any) => `${r.quantity}x ${r.roomType}`).join(", ");
     const mainSubtype = rooms.map((r: any) => r.selectedSubtype).join(", ");
 
-    const newBooking = new Booking({
-      bookingId,
-      guestName,
-      phone,
-      dob: dob || "N/A",
-      checkIn,
-      checkOut,
-      rooms: roomDetailsForSave,
-      roomType: mainRoomType,
-      selectedSubtype: mainSubtype,
-      totalAmount: calculatedTotal,
-      paidAmount: advancePaid,
-      dueAmount: balanceDue,
-      paymentStatus: "Advance Paid",
-      bookingStatus: "Confirmed",
-      specialRequests: specialRequests || "",
-      razorpayOrderId: razorpay_order_id,
-      razorpayPaymentId: razorpay_payment_id
+    const createdBooking = await prisma.booking.create({
+      data: {
+        bookingId,
+        guestName,
+        phone,
+        dob: dob || "N/A",
+        checkIn,
+        checkOut,
+        rooms: roomDetailsForSave,
+        roomType: mainRoomType,
+        selectedSubtype: mainSubtype,
+        totalAmount: calculatedTotal,
+        paidAmount: advancePaid,
+        dueAmount: balanceDue,
+        paymentStatus: "Advance Paid",
+        bookingStatus: "Confirmed",
+        specialRequests: specialRequests || "",
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id
+      }
     });
 
-    await newBooking.save();
-
     // Fire-and-forget background auto-WhatsApp receipt dispatcher
-    sendAutoWhatsAppReceipt(newBooking).catch(err => {
+    sendAutoWhatsAppReceipt(createdBooking).catch(err => {
       console.error("WhatsApp auto-dispatch background error:", err);
     });
 
     // Notify Owner on WhatsApp via our Express service
-    sendOwnerWhatsAppNotification(newBooking).catch(err => {
+    sendOwnerWhatsAppNotification(createdBooking).catch(err => {
       console.error("Failed to trigger owner WhatsApp notification background task:", err);
     });
 
     return corsResponse(NextResponse.json({
       success: true,
       message: "Payment verified and booking confirmed!",
-      booking: newBooking
+      booking: createdBooking
     }));
 
   } catch (err: any) {

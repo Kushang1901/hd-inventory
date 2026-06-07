@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { connectToDatabase } from "@/lib/db";
-import { RoomPrice } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
 async function isAdmin() {
@@ -27,7 +26,7 @@ export async function GET() {
   try {
     await connectToDatabase();
     
-    const dbPrices = await RoomPrice.find({});
+    const dbPrices = await prisma.roomPrice.findMany({});
     
     // Merge database prices with default fallbacks to ensure completeness
     const mergedPrices = defaultPrices.map(def => {
@@ -69,11 +68,20 @@ export async function POST(request: Request) {
       }
 
       // Upsert room price record in database
-      await RoomPrice.findOneAndUpdate(
-        { roomType, subtype },
-        { price },
-        { new: true, upsert: true }
-      );
+      const existing = await prisma.roomPrice.findFirst({
+        where: { roomType, subtype }
+      });
+
+      if (existing) {
+        await prisma.roomPrice.update({
+          where: { id: existing.id },
+          data: { price }
+        });
+      } else {
+        await prisma.roomPrice.create({
+          data: { roomType, subtype, price }
+        });
+      }
     }
 
     return NextResponse.json({ success: true, message: "Room prices successfully updated in database!" });

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db";
-import { Booking, BlockedDate } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
@@ -27,19 +26,22 @@ export async function GET() {
       for (const range of blockedRanges) {
         const start = new Date(range.startDate);
         const end = new Date(range.endDate);
-        const exists = await BlockedDate.findOne({
-          startDate: start,
-          endDate: end,
-          roomType: range.roomType
-        });
-        if (!exists) {
-          const newBlock = new BlockedDate({
+        const exists = await prisma.blockedDate.findFirst({
+          where: {
             startDate: start,
             endDate: end,
-            roomType: range.roomType,
-            reason: range.reason
+            roomType: range.roomType
+          }
+        });
+        if (!exists) {
+          await prisma.blockedDate.create({
+            data: {
+              startDate: start,
+              endDate: end,
+              roomType: range.roomType,
+              reason: range.reason
+            }
           });
-          await newBlock.save();
         }
       }
     };
@@ -47,12 +49,19 @@ export async function GET() {
     await seedBlocks().catch(err => console.error("Blocked Dates Auto-seeding error:", err));
     
     // Fetch only check-in, check-out and room parameters for privacy compliance
-    const bookings = await Booking.find(
-      { bookingStatus: { $ne: "Cancelled" } },
-      "checkIn checkOut rooms.roomType rooms.quantity roomType"
-    );
+    const bookings = await prisma.booking.findMany({
+      where: {
+        bookingStatus: { not: "Cancelled" }
+      },
+      select: {
+        checkIn: true,
+        checkOut: true,
+        rooms: true,
+        roomType: true
+      }
+    });
 
-    const blocks = await BlockedDate.find({});
+    const blocks = await prisma.blockedDate.findMany();
 
     return corsResponse(NextResponse.json({
       success: true,

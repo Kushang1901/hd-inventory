@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { connectToDatabase } from "@/lib/db";
-import { Booking } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
 async function isAdmin() {
@@ -29,10 +28,10 @@ export async function GET(request: Request) {
     const filter: any = {};
 
     if (search) {
-      filter.$or = [
-        { guestName: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { bookingId: { $regex: search, $options: "i" } }
+      filter.OR = [
+        { guestName: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search, mode: "insensitive" } },
+        { bookingId: { contains: search, mode: "insensitive" } }
       ];
     }
 
@@ -40,7 +39,10 @@ export async function GET(request: Request) {
       filter.bookingStatus = status;
     }
 
-    const bookings = await Booking.find(filter).sort({ createdAt: -1 });
+    const bookings = await prisma.booking.findMany({
+      where: filter,
+      orderBy: { createdAt: "desc" }
+    });
 
     return NextResponse.json({ success: true, data: bookings });
   } catch (err: any) {

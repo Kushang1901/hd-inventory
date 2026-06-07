@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { connectToDatabase } from "@/lib/db";
-import { Booking } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
 async function isAdmin() {
@@ -25,7 +24,9 @@ export async function GET(
     await connectToDatabase();
     const { id } = await params;
 
-    const booking = await Booking.findById(id);
+    const booking = await prisma.booking.findUnique({
+      where: { id }
+    });
     
     if (!booking) {
       return NextResponse.json({ success: false, error: "Booking not found" }, { status: 404 });
@@ -51,45 +52,61 @@ export async function PATCH(
     const { id } = await params;
     const updates = await request.json();
 
-    const booking = await Booking.findById(id);
+    const booking = await prisma.booking.findUnique({
+      where: { id }
+    });
 
     if (!booking) {
       return NextResponse.json({ success: false, error: "Booking not found" }, { status: 404 });
     }
 
+    let bookingStatus = booking.bookingStatus || "Confirmed";
+    let paymentStatus = booking.paymentStatus || "Unpaid";
+    let paidAmount = booking.paidAmount ?? 0;
+    let totalAmount = booking.totalAmount ?? 0;
+    let dueAmount = booking.dueAmount ?? 0;
+
     // Supported updates: bookingStatus, paymentStatus, paidAmount, dueAmount
     if (updates.bookingStatus) {
-      booking.bookingStatus = updates.bookingStatus;
+      bookingStatus = updates.bookingStatus;
       
       // Auto adjust payment status if checked out
       if (updates.bookingStatus === "Checked Out") {
-        booking.paymentStatus = "Fully Paid";
-        booking.paidAmount = booking.totalAmount;
-        booking.dueAmount = 0;
+        paymentStatus = "Fully Paid";
+        paidAmount = totalAmount;
+        dueAmount = 0;
       }
     }
 
     if (updates.paymentStatus) {
-      booking.paymentStatus = updates.paymentStatus;
+      paymentStatus = updates.paymentStatus;
       if (updates.paymentStatus === "Fully Paid") {
-        booking.paidAmount = booking.totalAmount;
-        booking.dueAmount = 0;
+        paidAmount = totalAmount;
+        dueAmount = 0;
       }
     }
 
     if (typeof updates.paidAmount === "number") {
-      booking.paidAmount = updates.paidAmount;
-      booking.dueAmount = Math.max(0, booking.totalAmount - updates.paidAmount);
-      if (booking.dueAmount === 0) {
-        booking.paymentStatus = "Fully Paid";
-      } else if (booking.paidAmount > 0) {
-        booking.paymentStatus = "Advance Paid";
+      paidAmount = updates.paidAmount;
+      dueAmount = Math.max(0, totalAmount - updates.paidAmount);
+      if (dueAmount === 0) {
+        paymentStatus = "Fully Paid";
+      } else if (paidAmount > 0) {
+        paymentStatus = "Advance Paid";
       }
     }
 
-    await booking.save();
+    const updatedBooking = await prisma.booking.update({
+      where: { id },
+      data: {
+        bookingStatus,
+        paymentStatus,
+        paidAmount,
+        dueAmount
+      }
+    });
 
-    return NextResponse.json({ success: true, data: booking });
+    return NextResponse.json({ success: true, data: updatedBooking });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

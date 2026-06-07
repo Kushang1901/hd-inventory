@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
-import { connectToDatabase } from "@/lib/db";
-import { Booking, BlockedDate, RoomPrice, SeasonalPrice } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
   return handleOptions();
 }
-
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "rzp_live_SsrjT2eFY7oLhR",
@@ -20,7 +18,9 @@ async function getRoomRate(roomType: string, subtype: string): Promise<number> {
   const subtypeNormalized = isAC ? "AC" : "Non-AC";
   
   try {
-    const record = await RoomPrice.findOne({ roomType, subtype: subtypeNormalized });
+    const record = await prisma.roomPrice.findFirst({
+      where: { roomType, subtype: subtypeNormalized }
+    });
     if (record) {
       return record.price;
     }
@@ -69,9 +69,11 @@ export async function POST(request: Request) {
     }
 
     // Verify room dates are not blocked
-    const overlappingBlocks = await BlockedDate.find({
-      startDate: { $lte: checkOut },
-      endDate: { $gte: checkIn }
+    const overlappingBlocks = await prisma.blockedDate.findMany({
+      where: {
+        startDate: { lte: checkOut },
+        endDate: { gte: checkIn }
+      }
     });
 
     const isHotelFullyBlocked = overlappingBlocks.some(block => block.roomType === "All");
@@ -82,10 +84,12 @@ export async function POST(request: Request) {
     const blockedTypes = new Set(overlappingBlocks.map(block => block.roomType));
 
     // Verify requested room capacity against live active bookings database records
-    const activeOverlappingBookings = await Booking.find({
-      bookingStatus: { $ne: "Cancelled" },
-      checkIn: { $lt: checkOut },
-      checkOut: { $gt: checkIn }
+    const activeOverlappingBookings = await prisma.booking.findMany({
+      where: {
+        bookingStatus: { not: "Cancelled" },
+        checkIn: { lt: checkOut },
+        checkOut: { gt: checkIn }
+      }
     });
 
     const totalCapacities: { [key: string]: number } = {
@@ -149,10 +153,12 @@ export async function POST(request: Request) {
     }
 
     // Validate rooms capacity and compute totals night-by-night
-    const dbPrices = await RoomPrice.find({});
-    const seasonalPrices = await SeasonalPrice.find({
-      startDate: { $lte: checkOut },
-      endDate: { $gte: checkIn }
+    const dbPrices = await prisma.roomPrice.findMany({});
+    const seasonalPrices = await prisma.seasonalPrice.findMany({
+      where: {
+        startDate: { lte: checkOut },
+        endDate: { gte: checkIn }
+      }
     });
 
     const getNightlyBaseRate = (roomType: string, subtype: string, date: Date) => {

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { connectToDatabase } from "@/lib/db";
-import { BlockedDate } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
 async function isAdmin() {
@@ -16,7 +15,9 @@ async function isAdmin() {
 export async function GET() {
   try {
     await connectToDatabase();
-    const blocks = await BlockedDate.find().sort({ startDate: 1 });
+    const blocks = await prisma.blockedDate.findMany({
+      orderBy: { startDate: "asc" }
+    });
     return NextResponse.json({ success: true, data: blocks });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -45,14 +46,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Start date must be before or equal to end date" }, { status: 400 });
     }
 
-    const newBlock = new BlockedDate({
-      startDate: start,
-      endDate: end,
-      roomType: roomType || "All",
-      reason: reason || "",
+    const newBlock = await prisma.blockedDate.create({
+      data: {
+        startDate: start,
+        endDate: end,
+        roomType: roomType || "All",
+        reason: reason || "",
+      }
     });
-
-    await newBlock.save();
 
     return NextResponse.json({ success: true, data: newBlock });
   } catch (err: any) {
@@ -82,22 +83,21 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: "Start date must be before or equal to end date" }, { status: 400 });
     }
 
-    const updatedBlock = await BlockedDate.findByIdAndUpdate(
-      id,
-      { startDate: start, endDate: end, roomType: roomType || "All", reason: reason || "" },
-      { new: true }
-    );
-
-    if (!updatedBlock) {
-      return NextResponse.json({ success: false, error: "Block not found" }, { status: 404 });
-    }
+    const updatedBlock = await prisma.blockedDate.update({
+      where: { id },
+      data: {
+        startDate: start,
+        endDate: end,
+        roomType: roomType || "All",
+        reason: reason || ""
+      }
+    });
 
     return NextResponse.json({ success: true, data: updatedBlock });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
-
 
 // DELETE: Remove a blocked date range
 export async function DELETE(request: Request) {
@@ -114,7 +114,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: "Block ID is required" }, { status: 400 });
     }
 
-    await BlockedDate.findByIdAndDelete(id);
+    await prisma.blockedDate.delete({
+      where: { id }
+    });
 
     return NextResponse.json({ success: true, message: "Blocked date removed successfully" });
   } catch (err: any) {

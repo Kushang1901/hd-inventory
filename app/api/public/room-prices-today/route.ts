@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db";
-import { RoomPrice, SeasonalPrice } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
@@ -30,7 +29,6 @@ export async function GET(request: Request) {
       targetDate = new Date(dateStr.split("T")[0] + "T00:00:00.000Z");
     } else {
       // Local time of hotel is in India (UTC+5:30)
-      // To get target date matching hotel local day, offset today
       const todayLocal = new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000);
       const todayStr = todayLocal.toISOString().split("T")[0];
       targetDate = new Date(todayStr + "T00:00:00.000Z");
@@ -41,12 +39,14 @@ export async function GET(request: Request) {
     }
 
     // Fetch all standard database prices
-    const dbPrices = await RoomPrice.find({});
+    const dbPrices = await prisma.roomPrice.findMany({});
     
     // Fetch any active seasonal overrides for the target date
-    const activeOverrides = await SeasonalPrice.find({
-      startDate: { $lte: targetDate },
-      endDate: { $gte: targetDate }
+    const activeOverrides = await prisma.seasonalPrice.findMany({
+      where: {
+        startDate: { lte: targetDate },
+        endDate: { gte: targetDate }
+      }
     });
 
     // Merge everything dynamically

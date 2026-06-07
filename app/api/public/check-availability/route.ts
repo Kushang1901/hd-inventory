@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db";
-import { Booking, BlockedDate, RoomPrice, SeasonalPrice } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { corsResponse, handleOptions } from "@/lib/cors";
 
 export async function OPTIONS() {
   return handleOptions();
 }
-
 
 export async function GET(request: Request) {
   try {
@@ -56,10 +54,11 @@ export async function GET(request: Request) {
     }
 
     // 1. Fetch blocked dates overlapping with the selected range
-    // Block overlap condition: block.startDate <= checkOut && block.endDate >= checkIn
-    const overlappingBlocks = await BlockedDate.find({
-      startDate: { $lte: checkOut },
-      endDate: { $gte: checkIn }
+    const overlappingBlocks = await prisma.blockedDate.findMany({
+      where: {
+        startDate: { lte: checkOut },
+        endDate: { gte: checkIn }
+      }
     });
 
     const isHotelFullyBlocked = overlappingBlocks.some(block => block.roomType === "All");
@@ -78,10 +77,12 @@ export async function GET(request: Request) {
     };
 
     // 3. Fetch overlapping active bookings (not Cancelled)
-    const activeOverlappingBookings = await Booking.find({
-      bookingStatus: { $ne: "Cancelled" },
-      checkIn: { $lt: checkOut },
-      checkOut: { $gt: checkIn }
+    const activeOverlappingBookings = await prisma.booking.findMany({
+      where: {
+        bookingStatus: { not: "Cancelled" },
+        checkIn: { lt: checkOut },
+        checkOut: { gt: checkIn }
+      }
     });
 
     const bookedCounts: { [key: string]: number } = {
@@ -93,7 +94,6 @@ export async function GET(request: Request) {
 
     activeOverlappingBookings.forEach((b: any) => {
       if (b.rooms && b.rooms.length > 0) {
-        // New multiple room structure
         b.rooms.forEach((room: any) => {
           const type = room.roomType;
           if (bookedCounts[type] !== undefined) {
@@ -101,7 +101,6 @@ export async function GET(request: Request) {
           }
         });
       } else if (b.roomType) {
-        // Legacy single room structure
         const type = b.roomType;
         if (bookedCounts[type] !== undefined) {
           bookedCounts[type] += 1;
@@ -110,10 +109,12 @@ export async function GET(request: Request) {
     });
 
     // 4. Room Configuration Details - Dynamically queried from MongoDB with seasonal overrides
-    const dbPrices = await RoomPrice.find({});
-    const seasonalPrices = await SeasonalPrice.find({
-      startDate: { $lte: checkOut },
-      endDate: { $gte: checkIn }
+    const dbPrices = await prisma.roomPrice.findMany({});
+    const seasonalPrices = await prisma.seasonalPrice.findMany({
+      where: {
+        startDate: { lte: checkOut },
+        endDate: { gte: checkIn }
+      }
     });
 
     const getAverageNightlyRate = (roomType: string, subtype: string, defaultVal: number) => {
@@ -196,7 +197,6 @@ export async function GET(request: Request) {
       };
     });
 
-    // Check if the whole hotel is booked out or blocked
     const totalAvailableRooms = roomsAvailability.reduce((sum, r) => sum + r.availableCount, 0);
 
     return corsResponse(NextResponse.json({

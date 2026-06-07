@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { connectToDatabase } from "@/lib/db";
-import { SeasonalPrice } from "@/lib/models/schema";
+import { connectToDatabase, prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
 async function isAdmin() {
@@ -18,7 +17,9 @@ export async function GET() {
     await connectToDatabase();
     
     // Sort by startDate
-    const prices = await SeasonalPrice.find({}).sort({ startDate: 1 });
+    const prices = await prisma.seasonalPrice.findMany({
+      orderBy: { startDate: "asc" }
+    });
     
     return NextResponse.json({ success: true, data: prices });
   } catch (err: any) {
@@ -48,11 +49,13 @@ export async function POST(request: Request) {
     }
 
     // Check for overlap collision for the SAME room type and subtype
-    const overlapping = await SeasonalPrice.findOne({
-      roomType,
-      subtype,
-      startDate: { $lte: end },
-      endDate: { $gte: start }
+    const overlapping = await prisma.seasonalPrice.findFirst({
+      where: {
+        roomType,
+        subtype,
+        startDate: { lte: end },
+        endDate: { gte: start }
+      }
     });
 
     if (overlapping) {
@@ -64,16 +67,16 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    const newOverride = new SeasonalPrice({
-      startDate: start,
-      endDate: end,
-      roomType,
-      subtype,
-      price,
-      reason: reason || ""
+    await prisma.seasonalPrice.create({
+      data: {
+        startDate: start,
+        endDate: end,
+        roomType,
+        subtype,
+        price,
+        reason: reason || ""
+      }
     });
-
-    await newOverride.save();
 
     return NextResponse.json({ success: true, message: "Seasonal price override successfully scheduled!" });
   } catch (err: any) {
@@ -96,10 +99,17 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: "Missing override ID parameter" }, { status: 400 });
     }
 
-    const deleted = await SeasonalPrice.findByIdAndDelete(id);
-    if (!deleted) {
+    const existing = await prisma.seasonalPrice.findUnique({
+      where: { id }
+    });
+
+    if (!existing) {
       return NextResponse.json({ success: false, error: "Price override record not found" }, { status: 404 });
     }
+
+    await prisma.seasonalPrice.delete({
+      where: { id }
+    });
 
     return NextResponse.json({ success: true, message: "Seasonal price override successfully deleted!" });
   } catch (err: any) {

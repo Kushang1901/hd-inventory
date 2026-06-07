@@ -11,8 +11,21 @@ import {
   TrendingUp,
   Clock,
   Unlock,
-  AlertCircle
+  AlertCircle,
+  Bot
 } from "lucide-react";
+
+type BookingRecord = {
+  _id: string;
+  bookingId: string;
+  guestName: string;
+  roomType: string;
+  checkIn: string;
+  totalAmount: number;
+  paidAmount?: number;
+  dueAmount: number;
+  bookingStatus: string;
+};
 
 export default function DashboardHome() {
   const [loading, setLoading] = useState(true);
@@ -23,7 +36,7 @@ export default function DashboardHome() {
     outstandingRevenue: 0,
     activeStays: 0
   });
-  const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [recentBookings, setRecentBookings] = useState<BookingRecord[]>([]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -32,14 +45,14 @@ export default function DashboardHome() {
         if (!response.ok) throw new Error("Failed to load dashboard metrics");
         
         const resData = await response.json();
-        const bookingsList = resData.data || [];
+        const bookingsList = (resData.data || []) as BookingRecord[];
 
         // Compute stats dynamically from live MongoDB entries
         let revenue = 0;
         let outstanding = 0;
         let active = 0;
 
-        bookingsList.forEach((b: any) => {
+        bookingsList.forEach((b) => {
           if (b.bookingStatus !== "Cancelled") {
             revenue += b.paidAmount || 0;
             outstanding += b.dueAmount || 0;
@@ -58,8 +71,8 @@ export default function DashboardHome() {
         });
 
         setRecentBookings(bookingsList.slice(0, 5));
-      } catch (err: any) {
-        setError(err.message || "An error occurred fetching dashboard data");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "An error occurred fetching dashboard data");
       } finally {
         setLoading(false);
       }
@@ -258,6 +271,22 @@ export default function DashboardHome() {
               <div>
                 <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Public System</h3>
                 <p className="text-[10px] text-zinc-500 mt-1">Open public website booking module.</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-amber-500" />
+            </a>
+
+            <a 
+              href="/assistant"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between rounded-lg border border-zinc-800/60 bg-zinc-950/60 hover:bg-zinc-900 hover:border-amber-500/30 p-4 transition-all duration-300"
+            >
+              <div>
+                <h3 className="text-xs font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-amber-500" />
+                  AI Concierge
+                </h3>
+                <p className="text-[10px] text-zinc-500 mt-1">Open the live hotel assistant for pricing and availability.</p>
               </div>
               <ArrowRight className="h-4 w-4 text-amber-500" />
             </a>

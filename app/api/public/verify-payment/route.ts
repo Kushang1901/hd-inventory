@@ -91,7 +91,7 @@ async function sendAutoWhatsAppReceipt(booking: any) {
 }
 
 async function sendOwnerWhatsAppNotification(booking: any) {
-  const serviceUrl = process.env.WHATSAPP_SERVICE_URL || "http://localhost:3000";
+  const serviceUrl = process.env.WHATSAPP_SERVICE_URL || "https://hotel-booking-1-gg1m.onrender.com";
   try {
     console.log(`Sending owner WhatsApp notification request to: ${serviceUrl}/api/whatsapp/notify...`);
     const response = await fetch(`${serviceUrl}/api/whatsapp/notify`, {
@@ -291,14 +291,13 @@ export async function POST(request: Request) {
         razorpayPaymentId: razorpay_payment_id
       }
     });
-
-    // Fire-and-forget background auto-WhatsApp receipt dispatcher
-    sendAutoWhatsAppReceipt(createdBooking).catch(err => {
+    // Await background auto-WhatsApp receipt dispatcher
+    await sendAutoWhatsAppReceipt(createdBooking).catch(err => {
       console.error("WhatsApp auto-dispatch background error:", err);
     });
 
-    // Notify Owner on WhatsApp via our Express service
-    sendOwnerWhatsAppNotification(createdBooking).catch(err => {
+    // Await notifying Owner on WhatsApp via our Express service
+    await sendOwnerWhatsAppNotification(createdBooking).catch(err => {
       console.error("Failed to trigger owner WhatsApp notification background task:", err);
     });
 

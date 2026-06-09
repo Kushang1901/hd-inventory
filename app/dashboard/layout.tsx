@@ -24,8 +24,46 @@ export default function DashboardLayout({
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [timeVal, setTimeVal] = useState("");
+  const [ampmVal, setAmpmVal] = useState("");
+  const [dateVal, setDateVal] = useState("");
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const timeFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+      const timeStr = timeFormatter.format(now);
+      const cleanTimeStr = timeStr.replace(/\u202f/g, " ");
+      const parts = cleanTimeStr.split(/\s+/);
+      if (parts.length === 2) {
+        setTimeVal(parts[0]);
+        setAmpmVal(parts[1]);
+      } else {
+        setTimeVal(timeStr);
+        setAmpmVal("");
+      }
+
+      const dateFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Kolkata",
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      });
+      setDateVal(dateFormatter.format(now));
+    };
+
+    updateTime();
+    const intervalId = setInterval(updateTime, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -97,18 +135,31 @@ export default function DashboardLayout({
           </Link>
         </div>
 
-        {/* User profile */}
-        <div className="px-6 py-6 border-b border-zinc-800 bg-zinc-900/20">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-red-800 to-amber-600 flex items-center justify-center border border-amber-500/30">
-              <Crown className="h-5 w-5 text-amber-300" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-zinc-200">Kushang (Owner)</p>
-              <p className="text-[10px] text-emerald-500 flex items-center gap-1 font-mono uppercase">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Active Owner
-              </p>
+        {/* Real-time IST Clock */}
+        <div className="px-6 py-5 border-b border-zinc-800 bg-zinc-900/10">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 shadow-sm relative overflow-hidden group">
+            {/* Subtle background glow */}
+            <div className="absolute -inset-px bg-gradient-to-r from-amber-500/10 to-red-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            <div className="relative z-10 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-[9px] font-bold tracking-widest text-amber-500 uppercase">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  IST Time
+                </span>
+                <span className="text-[10px] text-zinc-400 font-medium tracking-wide">
+                  {dateVal || "---"}
+                </span>
+              </div>
+              
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-semibold tracking-tight font-mono text-zinc-100 tabular-nums">
+                  {timeVal || "00:00:00"}
+                </span>
+                <span className="text-xs font-bold font-mono text-amber-400 uppercase">
+                  {ampmVal || "AM"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -178,6 +229,27 @@ export default function DashboardLayout({
                 <div>
                   <h2 className="text-sm font-serif tracking-wider text-amber-400">HOTEL DEVANG</h2>
                   <p className="text-[9px] tracking-wider text-zinc-500 uppercase">Dashboard</p>
+                </div>
+              </div>
+
+              {/* Real-time IST Clock - Mobile Drawer */}
+              <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/10 p-3.5 shadow-sm relative overflow-hidden">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="flex items-center gap-1.5 text-[9px] font-bold tracking-widest text-amber-500 uppercase">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    IST Time
+                  </span>
+                  <span className="text-[10px] text-zinc-400 font-medium tracking-wide">
+                    {dateVal || "---"}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-semibold tracking-tight font-mono text-zinc-100 tabular-nums">
+                    {timeVal || "00:00:00"}
+                  </span>
+                  <span className="text-xs font-bold font-mono text-amber-400 uppercase">
+                    {ampmVal || "AM"}
+                  </span>
                 </div>
               </div>
 

@@ -91,7 +91,7 @@ export default function DashboardLayout({
               <span className="text-xl font-serif">ॐ</span>
             </div>
             <div>
-              <h2 className="text-sm font-serif tracking-wider text-amber-400">DEVANG</h2>
+              <h2 className="text-sm font-serif tracking-wider text-amber-400">HOTEL DEVANG</h2>
               <p className="text-[9px] tracking-wider text-zinc-500 uppercase">Dashboard</p>
             </div>
           </Link>
@@ -176,7 +176,7 @@ export default function DashboardLayout({
                   <span className="text-xl font-serif">ॐ</span>
                 </div>
                 <div>
-                  <h2 className="text-sm font-serif tracking-wider text-amber-400">DEVANG</h2>
+                  <h2 className="text-sm font-serif tracking-wider text-amber-400">HOTEL DEVANG</h2>
                   <p className="text-[9px] tracking-wider text-zinc-500 uppercase">Dashboard</p>
                 </div>
               </div>

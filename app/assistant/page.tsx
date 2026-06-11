@@ -41,7 +41,7 @@ export default function AssistantPage() {
   const initialMessages: ChatMessage[] = [
     {
       role: "assistant",
-      content: "Welcome to Hotel Devang. Ask me about live availability, prices, room details, policies, or booking status.",
+      content: "Welcome to Hotel Devang. I am FRIDAY, your live booking assistant. Ask me about live availability, prices, room details, policies, or booking status.",
     },
   ];
 
@@ -127,8 +127,8 @@ export default function AssistantPage() {
               <Bot className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300/80">Hotel Devang AI Concierge</p>
-              <h1 className="text-lg font-semibold text-white">Live booking assistant</h1>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300/80">Hotel Devang AI Assistant</p>
+              <h1 className="text-lg font-semibold text-white">FRIDAY</h1>
             </div>
           </div>
 
@@ -167,7 +167,7 @@ export default function AssistantPage() {
                     }`}
                   >
                     <div className="mb-1 text-[10px] uppercase tracking-[0.24em] text-zinc-400">
-                      {message.role === "user" ? "You" : "Hotel Devang"}
+                      {message.role === "user" ? "You" : "FRIDAY"}
                     </div>
                     <p className="whitespace-pre-wrap">{message.content}</p>
                   </div>
@@ -192,6 +192,12 @@ export default function AssistantPage() {
                   <textarea
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        sendMessage(input);
+                      }
+                    }}
                     placeholder="Example: Is Suite Room available on 15 June?"
                     rows={3}
                     className="min-h-[84px] w-full resize-none rounded-2xl border border-white/10 bg-[#07090d] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-amber-400/40 focus:ring-2 focus:ring-amber-400/10"

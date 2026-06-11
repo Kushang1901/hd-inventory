@@ -323,7 +323,7 @@ export default function DashboardLayout({
                   <div className="space-y-1">
                     <p className="font-semibold text-amber-400 text-[10px] uppercase tracking-[0.2em]">FRIDAY AI</p>
                     <p className="text-zinc-100 text-[13px] leading-relaxed font-normal">
-                      Hi, I am FRIDAY. Talk to me if you are not getting anything!
+                      Hi Owner, I am FRIDAY. Ask me about your inventory, occupancies, or restrictions!
                     </p>
                   </div>
                 </div>

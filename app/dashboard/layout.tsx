@@ -28,6 +28,7 @@ export default function DashboardLayout({
   const [timeVal, setTimeVal] = useState("");
   const [ampmVal, setAmpmVal] = useState("");
   const [dateVal, setDateVal] = useState("");
+  const [showTooltip, setShowTooltip] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -64,6 +65,13 @@ export default function DashboardLayout({
     updateTime();
     const intervalId = setInterval(updateTime, 1000);
     return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTooltip(false);
+    }, 6000); // Hide after 6 seconds
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -293,10 +301,32 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-y-auto bg-zinc-950 p-4 md:p-8 relative">
           {children}
 
+          {/* Style tag for custom bobbing animation */}
+          <style>{`
+            @keyframes bob {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-8px); }
+            }
+            .animate-bob {
+              animation: bob 3.5s ease-in-out infinite;
+            }
+          `}</style>
+
+          {/* Tooltip bubble for FRIDAY */}
+          {showTooltip && (
+            <div className="fixed bottom-[92px] right-6 z-50 transition-all duration-500">
+              <div className="relative rounded-xl border border-amber-500/30 bg-zinc-900/95 px-4 py-2.5 text-xs text-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.15)] backdrop-blur-sm max-w-[200px] leading-relaxed">
+                Hi, I am FRIDAY. Talk to me if you are not getting anything!
+                {/* Small triangle arrow pointing down */}
+                <div className="absolute -bottom-[6px] right-6 h-2.5 w-2.5 rotate-45 border-r border-b border-amber-500/30 bg-zinc-900/95"></div>
+              </div>
+            </div>
+          )}
+
           {/* Floating chatbot circle button */}
           <Link
             href="/assistant"
-            className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-amber-500/30 bg-zinc-900/90 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-amber-500/50 hover:bg-amber-500 hover:text-zinc-950 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]"
+            className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-amber-500/30 bg-zinc-900/90 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-amber-500/50 hover:bg-amber-500 hover:text-zinc-950 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] animate-bob"
             title="Chat with FRIDAY"
           >
             <Bot className="h-6 w-6" />

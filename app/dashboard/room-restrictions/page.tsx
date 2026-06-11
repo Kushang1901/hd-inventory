@@ -73,7 +73,7 @@ export default function RoomRestrictionsPage() {
   const [startDate, setStartDate]           = useState(getLocalDateString());
   const [endDate, setEndDate]               = useState(getLocalDateString());
   const [roomType, setRoomType]             = useState("Deluxe");
-  const [blockedCount, setBlockedCount]     = useState(1);
+  const [blockedCount, setBlockedCount]     = useState(0);
   const [reason, setReason]                 = useState("");
   const [submitting, setSubmitting]         = useState(false);
   const [error, setError]                   = useState("");
@@ -197,7 +197,7 @@ export default function RoomRestrictionsPage() {
 
   // ── Reset blocked count when room type changes ─────────────────────────────
 
-  useEffect(() => { setBlockedCount(1); }, [roomType]);
+  useEffect(() => { setBlockedCount(0); }, [roomType]);
 
   // ── form helpers ───────────────────────────────────────────────────────────
 
@@ -205,7 +205,7 @@ export default function RoomRestrictionsPage() {
     setStartDate(getLocalDateString());
     setEndDate(getLocalDateString());
     setRoomType("Deluxe");
-    setBlockedCount(1);
+    setBlockedCount(0);
     setReason("");
     setEditingId(null);
     setError("");
@@ -481,23 +481,23 @@ export default function RoomRestrictionsPage() {
               <div className="flex items-center gap-3">
                 <input
                   type="range"
-                  min={1}
+                  min={0}
                   max={maxBlock}
                   value={blockedCount}
                   onChange={(e) => setBlockedCount(parseInt(e.target.value, 10))}
                   className="flex-1 h-2 rounded-full appearance-none bg-zinc-800 cursor-pointer accent-red-500"
                 />
                 <div className="flex items-center gap-1">
-                  <button type="button" onClick={() => setBlockedCount(Math.max(1, blockedCount - 1))}
+                  <button type="button" onClick={() => setBlockedCount(Math.max(0, blockedCount - 1))}
                     className="h-7 w-7 rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-300 flex items-center justify-center hover:bg-zinc-800 transition cursor-pointer font-bold text-sm">−</button>
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     max={maxBlock}
                     value={blockedCount}
                     onChange={(e) => {
                       const v = parseInt(e.target.value, 10);
-                      if (!isNaN(v)) setBlockedCount(Math.min(maxBlock, Math.max(1, v)));
+                      if (!isNaN(v)) setBlockedCount(Math.min(maxBlock, Math.max(0, v)));
                     }}
                     className="w-12 text-center rounded-lg border border-zinc-700 bg-zinc-950 text-white text-sm py-1 outline-none focus:border-amber-500/50"
                   />

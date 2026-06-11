@@ -274,22 +274,6 @@ export default function DashboardHome() {
               </div>
               <ArrowRight className="h-4 w-4 text-amber-500" />
             </a>
-
-            <a 
-              href="/assistant"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-lg border border-zinc-800/60 bg-zinc-950/60 hover:bg-zinc-900 hover:border-amber-500/30 p-4 transition-all duration-300"
-            >
-              <div>
-                <h3 className="text-xs font-semibold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-amber-500" />
-                  AI Concierge
-                </h3>
-                <p className="text-[10px] text-zinc-500 mt-1">Open the live hotel assistant for pricing and availability.</p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-amber-500" />
-            </a>
           </div>
 
           <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 p-4 flex gap-3 text-xs text-amber-500/80 leading-relaxed">

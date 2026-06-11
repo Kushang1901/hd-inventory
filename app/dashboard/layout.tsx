@@ -13,7 +13,8 @@ import {
   ExternalLink,
   Crown,
   Calendar,
-  Coins
+  Coins,
+  Bot
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -289,8 +290,17 @@ export default function DashboardLayout({
         )}
 
         {/* Content view portal */}
-        <main className="flex-1 overflow-y-auto bg-zinc-950 p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto bg-zinc-950 p-4 md:p-8 relative">
           {children}
+
+          {/* Floating chatbot circle button */}
+          <Link
+            href="/assistant"
+            className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-amber-500/30 bg-zinc-900/90 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)] backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-amber-500/50 hover:bg-amber-500 hover:text-zinc-950 hover:shadow-[0_0_25px_rgba(245,158,11,0.4)]"
+            title="Chat with FRIDAY"
+          >
+            <Bot className="h-6 w-6" />
+          </Link>
         </main>
       </div>
     </div>

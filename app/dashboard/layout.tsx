@@ -70,7 +70,7 @@ export default function DashboardLayout({
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowTooltip(false);
-    }, 6000); // Hide after 6 seconds
+    }, 8000); // Hide after 8 seconds for better readability
     return () => clearTimeout(timer);
   }, []);
 
@@ -314,11 +314,19 @@ export default function DashboardLayout({
 
           {/* Tooltip bubble for FRIDAY */}
           {showTooltip && (
-            <div className="fixed bottom-[92px] right-6 z-50 transition-all duration-500">
-              <div className="relative rounded-xl border border-amber-500/30 bg-zinc-900/95 px-4 py-2.5 text-xs text-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.15)] backdrop-blur-sm max-w-[200px] leading-relaxed">
-                Hi, I am FRIDAY. Talk to me if you are not getting anything!
+            <div className="fixed bottom-[96px] right-6 z-50 transition-all duration-500 animate-fadeIn font-sans">
+              <div className="relative rounded-2xl border border-amber-400/35 bg-zinc-950/95 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.6),0_0_30px_rgba(245,158,11,0.15)] backdrop-blur-md max-w-[270px] transition-all duration-300">
+                <div className="flex gap-3 items-start">
+                  <Bot className="h-5 w-5 text-amber-400 shrink-0 mt-0.5 animate-pulse" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-amber-400 text-[10px] uppercase tracking-[0.2em]">FRIDAY AI</p>
+                    <p className="text-zinc-100 text-[13px] leading-relaxed font-normal">
+                      Hi, I am FRIDAY. Talk to me if you are not getting anything!
+                    </p>
+                  </div>
+                </div>
                 {/* Small triangle arrow pointing down */}
-                <div className="absolute -bottom-[6px] right-6 h-2.5 w-2.5 rotate-45 border-r border-b border-amber-500/30 bg-zinc-900/95"></div>
+                <div className="absolute -bottom-[6px] right-[22px] h-2.5 w-2.5 rotate-45 border-r border-b border-amber-400/35 bg-zinc-950"></div>
               </div>
             </div>
           )}

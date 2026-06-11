@@ -58,9 +58,9 @@ export async function POST(request: Request) {
     }
 
     const blocked = parseInt(String(blockedCount), 10);
-    if (isNaN(blocked) || blocked < 1 || blocked > totalRooms) {
+    if (isNaN(blocked) || blocked < 0 || blocked > totalRooms) {
       return NextResponse.json(
-        { success: false, error: `blockedCount must be between 1 and ${totalRooms} for ${roomType} rooms.` },
+        { success: false, error: `blockedCount must be between 0 and ${totalRooms} for ${roomType} rooms.` },
         { status: 400 }
       );
     }
@@ -118,9 +118,9 @@ export async function PUT(request: Request) {
     }
 
     const blocked = parseInt(String(blockedCount), 10);
-    if (isNaN(blocked) || blocked < 1 || blocked > totalRooms) {
+    if (isNaN(blocked) || blocked < 0 || blocked > totalRooms) {
       return NextResponse.json(
-        { success: false, error: `blockedCount must be between 1 and ${totalRooms} for ${roomType} rooms.` },
+        { success: false, error: `blockedCount must be between 0 and ${totalRooms} for ${roomType} rooms.` },
         { status: 400 }
       );
     }

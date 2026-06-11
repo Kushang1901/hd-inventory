@@ -214,3 +214,18 @@ model ChatSession {
 
   @@map("chat_sessions")
 }
+
+// 15. Room Restrictions (partial room count blocking per date range)
+model RoomRestriction {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  startDate    DateTime
+  endDate      DateTime
+  roomType     String   // "Standard", "Deluxe", "Super Deluxe", "Suite"
+  totalRooms   Int      // Total physical rooms for that type (reference)
+  blockedCount Int      // How many rooms are blocked (owner-set cap)
+  reason       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("room_restrictions")
+}

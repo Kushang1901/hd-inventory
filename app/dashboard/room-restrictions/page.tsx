@@ -85,10 +85,6 @@ export default function RoomRestrictionsPage() {
   const startFpRef = useRef<any>(null);
   const endFpRef   = useRef<any>(null);
 
-  // Refs used inside Flatpickr callbacks so closures always read latest values
-  const blockedRangesRef = useRef<any[]>([]);
-  const roomTypeRef      = useRef<string>("Deluxe");
-
   const selectedRoomMeta = ROOM_TYPES.find((r) => r.id === roomType)!;
   const maxBlock         = selectedRoomMeta?.total ?? 1;
   const availablePreview = Math.max(0, maxBlock - blockedCount);
@@ -113,7 +109,6 @@ export default function RoomRestrictionsPage() {
       const data = await res.json();
       if (data.success) {
         setBlockedRanges(data.data || []);
-        blockedRangesRef.current = data.data || [];
       }
     } catch { /* silent */ }
   };
@@ -123,12 +118,7 @@ export default function RoomRestrictionsPage() {
     fetchBlockedRanges();
   }, []);
 
-  // ── keep refs in sync with state ───────────────────────────────────────────
-
-  useEffect(() => { blockedRangesRef.current = blockedRanges; }, [blockedRanges]);
-  useEffect(() => { roomTypeRef.current = roomType; },          [roomType]);
-
-  // ── Flatpickr init (once) ─────────────────────────────────────────────────
+  // ── Flatpickr init (recreates on roomType or blockedRanges changes) ──────────
 
   useEffect(() => {
     let sFp: any = null;
@@ -138,15 +128,15 @@ export default function RoomRestrictionsPage() {
       const fp = module.default;
       import("flatpickr/dist/themes/dark.css");
 
+      const disabled = getDisabledRanges(roomType, blockedRanges);
+
       /** Adds a green "available" dot or red "blocked" dot to each calendar day */
       const onDayCreate = (_dObj: any, _dStr: any, _fp: any, dayElem: any) => {
         const dateStr = toISO(dayElem.dateObj);
-        const blocks  = blockedRangesRef.current;
-        const rt      = roomTypeRef.current;
-        const isBlocked = blocks.some((b) => {
+        const isBlocked = blockedRanges.some((b) => {
           const bs = b.startDate.substring(0, 10);
           const be = b.endDate.substring(0, 10);
-          return dateStr >= bs && dateStr <= be && (b.roomType === "All" || b.roomType === rt);
+          return dateStr >= bs && dateStr <= be && (b.roomType === "All" || b.roomType === roomType);
         });
 
         const dot = document.createElement("span");
@@ -165,7 +155,7 @@ export default function RoomRestrictionsPage() {
         dateFormat: "Y-m-d",
         allowInput: true,
         minDate: "today",
-        disable: getDisabledRanges(roomTypeRef.current, blockedRangesRef.current),
+        disable: disabled,
         onDayCreate,
       };
 
@@ -196,20 +186,6 @@ export default function RoomRestrictionsPage() {
       if (eFp) eFp.destroy();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Update Flatpickr disable list when roomType or blockedRanges change ────
-
-  useEffect(() => {
-    const disabled = getDisabledRanges(roomType, blockedRanges);
-    if (startFpRef.current) {
-      startFpRef.current.set("disable", disabled);
-      startFpRef.current.redraw?.();
-    }
-    if (endFpRef.current) {
-      endFpRef.current.set("disable", disabled);
-      endFpRef.current.redraw?.();
-    }
   }, [roomType, blockedRanges]);
 
   // ── Sync state → Flatpickr when editing an existing restriction ───────────

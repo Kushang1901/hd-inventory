@@ -14,7 +14,8 @@ import {
   Crown,
   Calendar,
   Coins,
-  Bot
+  Bot,
+  ShieldOff
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -123,6 +124,7 @@ export default function DashboardLayout({
     { name: "Overview", href: "/dashboard", icon: Home },
     { name: "Bookings", href: "/dashboard/bookings", icon: CalendarDays },
     { name: "Blocked Dates", href: "/dashboard/blocked-dates", icon: CalendarOff },
+    { name: "Room Restrictions", href: "/dashboard/room-restrictions", icon: ShieldOff },
     { name: "Calendar View", href: "/dashboard/calendar", icon: Calendar },
     { name: "Set Price", href: "/dashboard/set-price", icon: Coins },
   ];

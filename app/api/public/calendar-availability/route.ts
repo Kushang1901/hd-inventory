@@ -62,11 +62,13 @@ export async function GET() {
     });
 
     const blocks = await prisma.blockedDate.findMany();
+    const restrictions = await prisma.roomRestriction.findMany();
 
     return corsResponse(NextResponse.json({
       success: true,
       bookings,
-      blocks
+      blocks,
+      restrictions
     }));
   } catch (err: any) {
     return corsResponse(NextResponse.json({ success: false, error: err.message }, { status: 500 }));

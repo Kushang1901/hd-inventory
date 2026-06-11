@@ -30,10 +30,10 @@ type AssistantResponse = {
 const API_BASE_URL = (process.env.NEXT_PUBLIC_HOTEL_ASSISTANT_API_URL || "http://localhost:3000").replace(/\/$/, "");
 
 const QUICK_PROMPTS = [
-  "Is Suite Room available on 15 June?",
-  "What is the price of Deluxe Room tomorrow?",
-  "Can 4 adults stay in a Suite Room?",
-  "What is the check-in time?",
+  "What room restrictions are active right now?",
+  "Is there any Deluxe room restricted on 9th September?",
+  "What is the occupancy status of the hotel today?",
+  "Show me room restrictions for June 2026",
   "Show booking status for HD12345",
 ];
 
@@ -41,7 +41,7 @@ export default function AssistantPage() {
   const initialMessages: ChatMessage[] = [
     {
       role: "assistant",
-      content: "Welcome to Hotel Devang. I am FRIDAY, your live booking assistant. Ask me about live availability, prices, room details, policies, or booking status.",
+      content: "Welcome, Owner. I am FRIDAY, your AI inventory assistant. Ask me about room restrictions, live occupancy, prices, room details, or booking status.",
     },
   ];
 
@@ -240,19 +240,19 @@ export default function AssistantPage() {
               <div className="mt-4 space-y-3 text-sm text-zinc-300">
                 <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
                   <CalendarDays className="mt-0.5 h-4 w-4 text-amber-300" />
-                  <span>Check live room availability for any date range.</span>
+                  <span>Fetch active room restrictions & blocked dates.</span>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
                   <Wallet className="mt-0.5 h-4 w-4 text-amber-300" />
-                  <span>Fetch room prices from the database before replying.</span>
+                  <span>Retrieve configured room prices and seasonal rates.</span>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
                   <Users className="mt-0.5 h-4 w-4 text-amber-300" />
-                  <span>Explain room capacity and extra mattress rules.</span>
+                  <span>Analyze daily occupancy stats & booking counts.</span>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
                   <Ticket className="mt-0.5 h-4 w-4 text-amber-300" />
-                  <span>Look up booking status using a booking ID.</span>
+                  <span>Look up guest bookings and payment status.</span>
                 </div>
               </div>
             </section>

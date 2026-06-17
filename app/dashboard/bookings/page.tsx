@@ -250,7 +250,7 @@ export default function BookingsManagement() {
               </thead>
               <tbody className="divide-y divide-zinc-800/50 text-sm text-zinc-300">
                 {bookings.map((b) => (
-                  <tr key={b._id} className="hover:bg-zinc-900/20 transition-all duration-150">
+                  <tr key={b.id || b._id} className="hover:bg-zinc-900/20 transition-all duration-150">
                     <td className="px-6 py-4 font-mono text-xs text-amber-500 font-semibold">{b.bookingId}</td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-white">{b.guestName}</div>
@@ -332,7 +332,7 @@ export default function BookingsManagement() {
                     {/* Check In Action */}
                     {selectedBooking.bookingStatus === "Confirmed" && (
                       <button
-                        onClick={() => handleStatusUpdate(selectedBooking._id, "Checked In")}
+                        onClick={() => handleStatusUpdate(selectedBooking.id || selectedBooking._id, "Checked In")}
                         disabled={updateLoading}
                         className="w-full flex items-center justify-center gap-2 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-medium py-2.5 text-xs uppercase tracking-wider cursor-pointer transition active:scale-[0.98]"
                       >
@@ -343,7 +343,7 @@ export default function BookingsManagement() {
                     {/* Check Out Action */}
                     {selectedBooking.bookingStatus === "Checked In" && (
                       <button
-                        onClick={() => handleStatusUpdate(selectedBooking._id, "Checked Out")}
+                        onClick={() => handleStatusUpdate(selectedBooking.id || selectedBooking._id, "Checked Out")}
                         disabled={updateLoading}
                         className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium py-2.5 text-xs uppercase tracking-wider cursor-pointer transition active:scale-[0.98]"
                       >
@@ -354,7 +354,7 @@ export default function BookingsManagement() {
                     {/* Collect Balance separately */}
                     {selectedBooking.bookingStatus !== "Cancelled" && selectedBooking.dueAmount > 0 && (
                       <button
-                        onClick={() => handleCollectOutstanding(selectedBooking._id)}
+                        onClick={() => handleCollectOutstanding(selectedBooking.id || selectedBooking._id)}
                         disabled={updateLoading}
                         className="w-full flex items-center justify-center gap-2 rounded-lg bg-zinc-800 border border-zinc-700 hover:border-amber-500/30 disabled:opacity-50 text-amber-500 font-medium py-2.5 text-xs uppercase tracking-wider cursor-pointer transition"
                       >
@@ -367,7 +367,7 @@ export default function BookingsManagement() {
                       <button
                         onClick={() => {
                           if (confirm("Are you sure you want to cancel this booking?")) {
-                            handleStatusUpdate(selectedBooking._id, "Cancelled");
+                            handleStatusUpdate(selectedBooking.id || selectedBooking._id, "Cancelled");
                           }
                         }}
                         disabled={updateLoading}

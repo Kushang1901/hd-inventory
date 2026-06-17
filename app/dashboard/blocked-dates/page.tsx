@@ -406,7 +406,7 @@ export default function BlockedDatesManagement() {
                   <tbody className="divide-y divide-zinc-800/40 text-zinc-300">
                     {blocks.map((b) => (
                       <tr 
-                        key={b._id} 
+                        key={b.id || b._id} 
                         className="hover:bg-zinc-900/20 hover:cursor-pointer transition-colors"
                         onClick={() => setSelectedPreviewBlock(b)}
                         title="Click to view full block details"
@@ -441,7 +441,7 @@ export default function BlockedDatesManagement() {
                               setEndDate(b.endDate.split("T")[0]);
                               setRoomType(b.roomType);
                               setReason(b.reason || "");
-                              setEditingBlockId(b._id);
+                              setEditingBlockId(b.id || b._id);
                               document.getElementById("block-form-card")?.scrollIntoView({ behavior: "smooth" });
                             }}
                             className="rounded p-2 text-zinc-500 hover:bg-amber-500/10 hover:text-amber-400 transition cursor-pointer"
@@ -452,7 +452,7 @@ export default function BlockedDatesManagement() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleRemoveBlock(b._id);
+                              handleRemoveBlock(b.id || b._id);
                             }}
                             className="rounded p-2 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer"
                             title="Remove date block"
@@ -583,7 +583,7 @@ export default function BlockedDatesManagement() {
             <div className="border-t border-zinc-800/80 px-6 py-4 bg-zinc-950/50 flex flex-wrap gap-2 items-center justify-between">
               <button
                 onClick={() => {
-                  const id = selectedPreviewBlock._id;
+                  const id = selectedPreviewBlock.id || selectedPreviewBlock._id;
                   setSelectedPreviewBlock(null);
                   handleRemoveBlock(id);
                 }}
@@ -600,7 +600,7 @@ export default function BlockedDatesManagement() {
                     setEndDate(selectedPreviewBlock.endDate.split("T")[0]);
                     setRoomType(selectedPreviewBlock.roomType);
                     setReason(selectedPreviewBlock.reason || "");
-                    setEditingBlockId(selectedPreviewBlock._id);
+                    setEditingBlockId(selectedPreviewBlock.id || selectedPreviewBlock._id);
                     setSelectedPreviewBlock(null);
                     document.getElementById("block-form-card")?.scrollIntoView({ behavior: "smooth" });
                   }}

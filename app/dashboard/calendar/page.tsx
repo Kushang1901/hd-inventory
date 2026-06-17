@@ -691,7 +691,7 @@ export default function CalendarDashboard() {
                 ) : (
                   <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
                     {selectedDateStats.bookings.map((b) => (
-                      <div key={b._id} className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 space-y-2 text-xs">
+                      <div key={b.id || b._id} className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 space-y-2 text-xs">
                         <div className="flex justify-between items-start">
                           <div>
                             <span className="font-semibold text-white text-xs">{b.guestName}</span>
@@ -724,7 +724,7 @@ export default function CalendarDashboard() {
                   <h4 className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Active Date Blocks Today</h4>
                   <div className="space-y-2">
                     {selectedDateStats.blocks.map((block) => (
-                      <div key={block._id} className="rounded-lg border border-red-500/20 bg-red-950/5 p-3 space-y-1.5 text-xs text-red-400">
+                      <div key={block.id || block._id} className="rounded-lg border border-red-500/20 bg-red-950/5 p-3 space-y-1.5 text-xs text-red-400">
                         <div className="flex items-center justify-between">
                           <span className="font-bold uppercase tracking-wider text-[9px]">
                             {block.roomType === "All" ? "Entire Hotel Block" : `${block.roomType} Room Block`}

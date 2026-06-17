@@ -585,7 +585,7 @@ export default function SetPricesManagement() {
                         const startStr = new Date(item.startDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
                         const endStr = new Date(item.endDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
                         return (
-                          <tr key={item._id} className="hover:bg-zinc-950/20 transition-colors">
+                          <tr key={item.id || item._id} className="hover:bg-zinc-950/20 transition-colors">
                             <td className="py-3 font-semibold text-white">
                               {getRoomName(item.roomType)} ({item.subtype})
                             </td>
@@ -601,7 +601,7 @@ export default function SetPricesManagement() {
                             <td className="py-3 text-right">
                               <button
                                 type="button"
-                                onClick={() => handleDeleteSeasonal(item._id)}
+                                onClick={() => handleDeleteSeasonal(item.id || item._id)}
                                 className="p-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/10 hover:border-red-500/20 transition cursor-pointer"
                                 title="Delete Override"
                               >

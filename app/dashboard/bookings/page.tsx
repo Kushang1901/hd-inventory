@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { 
   Search, 
   Filter, 
@@ -25,6 +26,20 @@ export default function BookingsManagement() {
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -366,9 +381,16 @@ export default function BookingsManagement() {
                     {selectedBooking.bookingStatus !== "Cancelled" && selectedBooking.bookingStatus !== "Checked Out" && (
                       <button
                         onClick={() => {
-                          if (confirm("Are you sure you want to cancel this booking?")) {
-                            handleStatusUpdate(selectedBooking.id || selectedBooking._id, "Cancelled");
-                          }
+                          setConfirmState({
+                            isOpen: true,
+                            title: "Cancel Reservation",
+                            message: "Are you sure you want to cancel this booking?",
+                            confirmText: "Cancel Reservation",
+                            isDestructive: true,
+                            onConfirm: () => {
+                              handleStatusUpdate(selectedBooking.id || selectedBooking._id, "Cancelled");
+                            }
+                          });
                         }}
                         disabled={updateLoading}
                         className="w-full flex items-center justify-center gap-2 rounded-lg bg-red-950/40 border border-red-900/30 hover:bg-red-900/20 disabled:opacity-50 text-red-400 font-medium py-2.5 text-xs uppercase tracking-wider cursor-pointer transition"
@@ -498,6 +520,19 @@ export default function BookingsManagement() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        isDestructive={confirmState.isDestructive}
+        onConfirm={() => {
+          confirmState.onConfirm();
+          setConfirmState((prev) => ({ ...prev, isOpen: false }));
+        }}
+        onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

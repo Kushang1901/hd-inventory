@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { 
   CalendarOff, 
   Plus, 
@@ -33,6 +34,20 @@ export default function BlockedDatesManagement() {
   const [success, setSuccess] = useState("");
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [selectedPreviewBlock, setSelectedPreviewBlock] = useState<any | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   // Flatpickr instances references
   const [startFp, setStartFp] = useState<any>(null);
@@ -219,24 +234,29 @@ export default function BlockedDatesManagement() {
     }
   };
 
-  const handleRemoveBlock = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this date block? This will instantly reopen booking for these dates.")) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/blocked-dates?id=${id}`, {
-        method: "DELETE"
-      });
-      const data = await res.json();
-      if (data.success) {
-        fetchBlocks();
-      } else {
-        alert(data.error || "Failed to remove block");
+  const handleRemoveBlock = (id: string) => {
+    setConfirmState({
+      isOpen: true,
+      title: "Remove Date Block",
+      message: "Are you sure you want to remove this date block? This will instantly reopen booking for these dates.",
+      confirmText: "Lift Block",
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/blocked-dates?id=${id}`, {
+            method: "DELETE"
+          });
+          const data = await res.json();
+          if (data.success) {
+            fetchBlocks();
+          } else {
+            alert(data.error || "Failed to remove block");
+          }
+        } catch {
+          alert("Network error unblocking dates");
+        }
       }
-    } catch {
-      alert("Network error unblocking dates");
-    }
+    });
   };
 
   return (
@@ -621,6 +641,19 @@ export default function BlockedDatesManagement() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        isDestructive={confirmState.isDestructive}
+        onConfirm={() => {
+          confirmState.onConfirm();
+          setConfirmState((prev) => ({ ...prev, isOpen: false }));
+        }}
+        onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

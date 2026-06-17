@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Coins, Save, AlertCircle, RefreshCw, IndianRupee, Tag, Calendar, Plus, Trash2 } from "lucide-react";
 
 export default function SetPricesManagement() {
@@ -30,6 +31,20 @@ export default function SetPricesManagement() {
   // Flatpickr instances references
   const [startFp, setStartFp] = useState<any>(null);
   const [endFp, setEndFp] = useState<any>(null);
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   const fetchPrices = async () => {
     try {
@@ -235,26 +250,33 @@ export default function SetPricesManagement() {
     }
   };
 
-  const handleDeleteSeasonal = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this special rate override?")) return;
-    setSeasonalError("");
-    setSeasonalSuccess("");
-
-    try {
-      const res = await fetch(`/api/seasonal-prices?id=${id}`, {
-        method: "DELETE"
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSeasonalSuccess("Price override successfully deleted!");
-        fetchSeasonalPrices();
-        setTimeout(() => setSeasonalSuccess(""), 4000);
-      } else {
-        setSeasonalError(data.error || "Failed to delete price override.");
+  const handleDeleteSeasonal = (id: string) => {
+    setConfirmState({
+      isOpen: true,
+      title: "Delete Special Rate",
+      message: "Are you sure you want to delete this special rate override?",
+      confirmText: "Delete Override",
+      isDestructive: true,
+      onConfirm: async () => {
+        setSeasonalError("");
+        setSeasonalSuccess("");
+        try {
+          const res = await fetch(`/api/seasonal-prices?id=${id}`, {
+            method: "DELETE"
+          });
+          const data = await res.json();
+          if (data.success) {
+            setSeasonalSuccess("Price override successfully deleted!");
+            fetchSeasonalPrices();
+            setTimeout(() => setSeasonalSuccess(""), 4000);
+          } else {
+            setSeasonalError(data.error || "Failed to delete price override.");
+          }
+        } catch {
+          setSeasonalError("Network error deleting price override.");
+        }
       }
-    } catch {
-      setSeasonalError("Network error deleting price override.");
-    }
+    });
   };
 
   const handlePriceChange = (roomType: string, subtype: string, value: string) => {
@@ -619,6 +641,19 @@ export default function SetPricesManagement() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        isDestructive={confirmState.isDestructive}
+        onConfirm={() => {
+          confirmState.onConfirm();
+          setConfirmState((prev) => ({ ...prev, isOpen: false }));
+        }}
+        onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

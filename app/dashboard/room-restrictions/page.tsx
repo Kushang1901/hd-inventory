@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   ShieldOff,
   Plus,
@@ -80,6 +81,20 @@ export default function RoomRestrictionsPage() {
   const [success, setSuccess]               = useState("");
   const [editingId, setEditingId]           = useState<string | null>(null);
   const [selectedPreview, setSelectedPreview] = useState<any | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   // Flatpickr instances kept in refs (not state) so we can call .set() imperatively
   const startFpRef = useRef<any>(null);
@@ -242,16 +257,24 @@ export default function RoomRestrictionsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Remove this room restriction? Guests will be able to book those rooms again on these dates.")) return;
-    try {
-      const res  = await fetch(`/api/room-restrictions?id=${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) fetchRestrictions();
-      else alert(data.error || "Failed to remove restriction");
-    } catch {
-      alert("Network error removing restriction");
-    }
+  const handleDelete = (id: string) => {
+    setConfirmState({
+      isOpen: true,
+      title: "Remove Room Restriction",
+      message: "Remove this room restriction? Guests will be able to book those rooms again on these dates.",
+      confirmText: "Remove",
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const res  = await fetch(`/api/room-restrictions?id=${id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (data.success) fetchRestrictions();
+          else alert(data.error || "Failed to remove restriction");
+        } catch {
+          alert("Network error removing restriction");
+        }
+      }
+    });
   };
 
   const startEditFromRow = (r: any) => {
@@ -771,6 +794,19 @@ export default function RoomRestrictionsPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        isDestructive={confirmState.isDestructive}
+        onConfirm={() => {
+          confirmState.onConfirm();
+          setConfirmState((prev) => ({ ...prev, isOpen: false }));
+        }}
+        onCancel={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

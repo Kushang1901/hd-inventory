@@ -108,7 +108,7 @@ export default function DashboardLayout({
       >
         <div className="text-center">
           {/* Logo mandala spinner */}
-          <div className="relative mx-auto mb-6 h-20 w-20">
+          <div className="relative mx-auto mb-6 h-20 w-20 flex items-center justify-center">
             <div 
               className="absolute inset-0 rounded-full border-4 border-transparent animate-spin"
               style={{ borderTopColor: "#DC2626", borderRightColor: "#2563EB" }}
@@ -118,10 +118,13 @@ export default function DashboardLayout({
               style={{ borderBottomColor: "#DC2626", animationDirection: "reverse", animationDuration: "0.8s" }}
             />
             <div 
-              className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg"
-              style={{ fontFamily: "serif" }}
+              className="absolute inset-0 flex items-center justify-center bg-white rounded-full p-1.5 h-12 w-12 m-auto shadow-md"
             >
-              HD
+              <img 
+                src="/logo.png" 
+                alt="Hotel Devang Logo" 
+                className="h-8 w-8 object-contain"
+              />
             </div>
           </div>
           <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#93C5FD" }}>
@@ -167,23 +170,16 @@ export default function DashboardLayout({
           <Link href="/dashboard" className="flex items-center gap-3 group">
             {/* Mandala-inspired logo mark */}
             <div 
-              className="relative flex h-11 w-11 items-center justify-center rounded-full shrink-0 transition-transform duration-300 group-hover:scale-105"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full shrink-0 transition-transform duration-300 group-hover:scale-105 bg-white p-1"
               style={{ 
-                background: "linear-gradient(135deg, #DC2626 0%, #1E3A8A 100%)",
                 boxShadow: "0 0 0 2px rgba(255,255,255,0.15), 0 4px 12px rgba(220,38,38,0.3)"
               }}
             >
-              {/* Decorative ring */}
-              <div 
-                className="absolute inset-1 rounded-full"
-                style={{ border: "1px solid rgba(255,255,255,0.25)" }}
+              <img 
+                src="/logo.png" 
+                alt="Hotel Devang Logo" 
+                className="h-7 w-7 object-contain"
               />
-              <span 
-                className="relative text-white font-bold text-sm tracking-tight"
-                style={{ fontFamily: "Georgia, serif", letterSpacing: "0.05em" }}
-              >
-                HD
-              </span>
             </div>
             <div>
               <h2 
@@ -339,13 +335,16 @@ export default function DashboardLayout({
         >
           <div className="flex items-center gap-3">
             <div 
-              className="flex h-9 w-9 items-center justify-center rounded-full"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white p-0.5"
               style={{ 
-                background: "linear-gradient(135deg, #DC2626, #1E3A8A)",
                 boxShadow: "0 0 0 1.5px rgba(255,255,255,0.2)"
               }}
             >
-              <span className="text-white font-bold text-xs" style={{ fontFamily: "Georgia, serif" }}>HD</span>
+              <img 
+                src="/logo.png" 
+                alt="Hotel Devang Logo" 
+                className="h-6 w-6 object-contain"
+              />
             </div>
             <h1 
               className="text-sm font-bold tracking-widest text-white"
@@ -380,13 +379,16 @@ export default function DashboardLayout({
               {/* Brand */}
               <div className="flex items-center gap-3 mb-6 pb-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                 <div 
-                  className="flex h-10 w-10 items-center justify-center rounded-full"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white p-1"
                   style={{ 
-                    background: "linear-gradient(135deg, #DC2626, #1E3A8A)",
                     boxShadow: "0 0 0 2px rgba(255,255,255,0.15)"
                   }}
                 >
-                  <span className="text-white font-bold text-sm" style={{ fontFamily: "Georgia, serif" }}>HD</span>
+                  <img 
+                    src="/logo.png" 
+                    alt="Hotel Devang Logo" 
+                    className="h-7 w-7 object-contain"
+                  />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold tracking-widest text-white" style={{ fontFamily: "Georgia, serif" }}>HOTEL DEVANG</h2>

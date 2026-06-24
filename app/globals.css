@@ -1,38 +1,123 @@
 @import "tailwindcss";
 
+/* ══════════════════════════════════════════════════════
+   HOTEL DEVANG — DESIGN SYSTEM
+   Colors derived from logo: Royal Blue + Vivid Red + White
+   ══════════════════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Brand Colors (from logo) ── */
+  --hd-blue-950:   #0D1B4A;
+  --hd-blue-900:   #132254;
+  --hd-blue-800:   #1A2F72;
+  --hd-blue-700:   #1E3A8A;
+  --hd-blue-600:   #1D4ED8;
+  --hd-blue-500:   #2563EB;
+  --hd-blue-400:   #3B82F6;
+  --hd-blue-100:   #DBEAFE;
+  --hd-blue-50:    #EFF6FF;
+
+  --hd-red-900:    #7F1D1D;
+  --hd-red-800:    #991B1B;
+  --hd-red-700:    #B91C1C;
+  --hd-red-600:    #DC2626;
+  --hd-red-500:    #EF4444;
+  --hd-red-100:    #FEE2E2;
+  --hd-red-50:     #FFF5F5;
+
+  /* ── Neutrals ── */
+  --hd-white:      #FFFFFF;
+  --hd-cream:      #FAFBFF;
+  --hd-gray-50:    #F8FAFC;
+  --hd-gray-100:   #F1F5F9;
+  --hd-gray-200:   #E2E8F0;
+  --hd-gray-300:   #CBD5E1;
+  --hd-gray-400:   #94A3B8;
+  --hd-gray-500:   #64748B;
+  --hd-gray-600:   #475569;
+  --hd-gray-700:   #334155;
+  --hd-gray-800:   #1E293B;
+  --hd-gray-900:   #0F172A;
+
+  /* ── Background ── */
+  --background: var(--hd-cream);
+  --foreground: var(--hd-gray-800);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Base Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Hide HTML5 number input spinner arrows globally for a premium clean look */
+/* ── Number input spinners hidden ── */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--hd-gray-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--hd-blue-200, #BFDBFE);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hd-blue-500);
+}
+
+/* ── Custom keyframe animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 8px rgba(220,38,38,0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+}
+
+.animate-fadeIn  { animation: fadeIn  0.4s ease both; }
+.animate-scaleUp { animation: scaleUp 0.25s ease both; }
+.animate-bob     { animation: bob 3.5s ease-in-out infinite; }

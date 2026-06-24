@@ -42,41 +42,71 @@ export default function ConfirmDialog({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm transition-opacity duration-300"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300"
+      style={{ background: "rgba(13, 27, 74, 0.4)" }}
       onClick={onCancel}
     >
       <div 
-        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scaleUp text-sm text-zinc-300"
+        className="relative w-full max-w-md overflow-hidden rounded-2xl border bg-white p-6 shadow-[0_20px_50px_rgba(13,27,74,0.15)] animate-scaleUp text-sm"
+        style={{ 
+          borderColor: "rgba(29, 78, 216, 0.12)",
+          color: "var(--hd-gray-700)" 
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Decorative background glow */}
-        <div className={`absolute -right-16 -top-16 h-36 w-36 rounded-full bg-gradient-to-br ${isDestructive ? 'from-red-500/10 to-amber-600/10' : 'from-amber-500/10 to-zinc-600/10'} blur-xl pointer-events-none`}></div>
+        <div 
+          className="absolute -right-16 -top-16 h-36 w-36 rounded-full blur-xl pointer-events-none opacity-40"
+          style={{
+            background: isDestructive 
+              ? "linear-gradient(to bottom right, var(--hd-red-500), var(--hd-red-100))" 
+              : "linear-gradient(to bottom right, var(--hd-blue-400), var(--hd-blue-100))"
+          }}
+        />
         
         {/* Close button */}
         <button 
           onClick={onCancel}
-          className="absolute top-4 right-4 rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
+          className="absolute top-4 right-4 rounded-lg p-1.5 transition cursor-pointer"
+          style={{ 
+            color: "var(--hd-gray-400)", 
+            background: "transparent"
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "var(--hd-gray-100)";
+            (e.currentTarget as HTMLElement).style.color = "var(--hd-gray-800)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = "var(--hd-gray-400)";
+          }}
         >
           <X className="h-4 w-4" />
         </button>
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-3 pr-6">
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${
-            isDestructive 
-              ? "border-red-500/30 bg-red-500/10 text-red-400" 
-              : "border-amber-500/30 bg-amber-500/10 text-amber-500"
-          }`}>
+          <div 
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
+            style={{ 
+              borderColor: isDestructive ? "rgba(220,38,38,0.2)" : "rgba(29,78,216,0.2)",
+              background: isDestructive ? "rgba(220,38,38,0.06)" : "rgba(29,78,216,0.06)",
+              color: isDestructive ? "#DC2626" : "#1D4ED8"
+            }}
+          >
             <AlertTriangle className="h-5 w-5" />
           </div>
-          <h3 className="text-lg font-serif text-white font-semibold">
+          <h3 
+            className="text-lg font-bold"
+            style={{ fontFamily: "Georgia, serif", color: "#0F172A" }}
+          >
             {title}
           </h3>
         </div>
 
         {/* Message */}
         <div className="mb-6">
-          <p className="text-zinc-400 leading-relaxed font-sans text-xs">
+          <p className="leading-relaxed font-sans text-xs" style={{ color: "var(--hd-gray-600)" }}>
             {message}
           </p>
         </div>
@@ -85,17 +115,34 @@ export default function ConfirmDialog({
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
-            className="rounded-lg border border-zinc-700 bg-zinc-900/40 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold px-4 py-2.5 transition cursor-pointer active:scale-95"
+            className="rounded-xl border text-xs font-semibold px-4 py-2.5 transition cursor-pointer active:scale-95"
+            style={{ 
+              borderColor: "var(--hd-gray-250, #E2E8F0)",
+              background: "#F8FAFC",
+              color: "var(--hd-gray-700)" 
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "var(--hd-gray-100)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "#F8FAFC";
+            }}
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className={`rounded-lg text-xs font-semibold px-5 py-2.5 transition cursor-pointer active:scale-95 text-white ${
-              isDestructive
-                ? "bg-red-700 hover:bg-red-600"
-                : "bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold"
-            }`}
+            className="rounded-xl text-xs font-semibold px-5 py-2.5 transition cursor-pointer active:scale-95 text-white"
+            style={{
+              background: isDestructive ? "#DC2626" : "#1D4ED8",
+              boxShadow: isDestructive ? "0 2px 10px rgba(220,38,38,0.2)" : "0 2px 10px rgba(29,78,216,0.2)"
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = isDestructive ? "#B91C1C" : "#1E3A8A";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = isDestructive ? "#DC2626" : "#1D4ED8";
+            }}
           >
             {confirmText}
           </button>

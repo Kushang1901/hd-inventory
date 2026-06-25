@@ -797,7 +797,7 @@ export default function RoomRestrictionsPage() {
                       {new Date(selectedPreview.startDate).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" })}
                     </span>
                   </div>
-                  <div className="hidden sm:block text-slate-355 font-serif text-xl select-none" style={{ color: "var(--hd-gray-300)" }}>➔</div>
+                  <div className="hidden sm:block text-slate-300 font-serif text-xl select-none" style={{ color: "var(--hd-gray-300)" }}>➔</div>
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold">To</span>
                     <span className="font-semibold text-slate-800 text-base">

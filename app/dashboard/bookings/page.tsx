@@ -474,8 +474,10 @@ export default function BookingsManagement() {
                 <div id="print-receipt-section" className="space-y-6 font-sans">
                   {/* Bill header */}
                   <div className="text-center pb-4 border-b border-zinc-200">
+                    <img src="/logo.png" alt="Hotel Devang Logo" className="h-10 w-10 object-contain mx-auto mb-2" />
                     <span className="text-xl font-bold tracking-widest block text-red-900" style={{ fontFamily: "Georgia, serif", color: "#880000" }}>HOTEL DEVANG</span>
-                    <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-semibold block mt-0.5">Near Dwarkadhish Temple, Dwarka, Gujarat</span>
+                    <span className="text-[9px] text-zinc-500 font-semibold block mt-0.5" style={{ fontFamily: "monospace", fontSize: "9px" }}>GSTIN: 24AADFH4542D2ZU</span>
+                    <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-semibold block mt-0.5">Opp Circuit House, Hospital Rd, Dwarka, Gujarat 361335</span>
                     <span className="text-[10px] text-zinc-400 font-mono block mt-1">Ph: +91 98244 02132</span>
                     
                     <div className="border-t border-b border-double border-red-900/30 py-1.5 mt-3 bg-red-50/30">
@@ -566,8 +568,8 @@ export default function BookingsManagement() {
                     </div>
                     
                     {/* Stamp */}
-                    <div className="h-14 w-32 border-2 border-emerald-600/40 rounded flex flex-col items-center justify-center rotate-[-4deg] text-emerald-600 font-mono font-bold tracking-widest text-center select-none uppercase">
-                      <span className="text-[9px] border-b border-emerald-600/20 px-2 py-0.5">DEVANG DWARKA</span>
+                    <div className="h-14 min-w-[140px] px-2 border-2 border-emerald-600/40 rounded flex flex-col items-center justify-center rotate-[-4deg] text-emerald-600 font-mono font-bold tracking-widest text-center select-none uppercase">
+                      <span className="text-[8px] border-b border-emerald-600/20 px-2 py-0.5">HOTEL DEVANG DWARKA</span>
                       <span className="text-[10px] tracking-wide mt-0.5">CONFIRMED</span>
                     </div>
                   </div>

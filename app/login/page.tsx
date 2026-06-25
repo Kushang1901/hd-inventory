@@ -123,17 +123,37 @@ export default function AdminLogin() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-5">
+              {/* Custom Webkit Autofill Override to maintain dark theme styling */}
+              <style dangerouslySetInnerHTML={{__html: `
+                input:-webkit-autofill,
+                input:-webkit-autofill:hover, 
+                input:-webkit-autofill:focus,
+                input:-webkit-autofill:active {
+                  -webkit-text-fill-color: #ffffff !important;
+                  -webkit-box-shadow: 0 0 0 1000px #131c46 inset !important;
+                  box-shadow: 0 0 0 1000px #131c46 inset !important;
+                  transition: background-color 5000s ease-in-out 0s;
+                }
+              `}} />
+
               {/* Username */}
-              <div className="relative">
+              <div className="space-y-1.5">
+                <label 
+                  htmlFor="username-input"
+                  className="block text-[10px] text-blue-200 font-bold uppercase tracking-widest"
+                  style={{ letterSpacing: "0.15em" }}
+                >
+                  Username
+                </label>
                 <input
                   type="text"
                   id="username-input"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder=" "
-                  className="peer w-full rounded-xl px-4 pt-5 pb-2.5 text-sm text-white outline-none transition-all duration-200"
+                  placeholder="Enter your username"
+                  className="w-full rounded-xl px-4 py-3.5 text-sm text-white outline-none transition-all duration-200"
                   style={{ 
                     background: "rgba(255,255,255,0.04)",
                     border: "1px solid rgba(255,255,255,0.1)",
@@ -149,59 +169,50 @@ export default function AdminLogin() {
                     e.target.style.boxShadow = "none";
                   }}
                 />
-                <label 
-                  htmlFor="username-input"
-                  className="absolute left-3 -top-2 text-[10px] text-blue-200 bg-[#0D1B4A] px-1.5 font-bold uppercase tracking-widest transition-all duration-200 pointer-events-none
-                             peer-placeholder-shown:text-sm peer-placeholder-shown:text-slate-400 peer-placeholder-shown:top-3.5 peer-placeholder-shown:left-4 peer-placeholder-shown:bg-transparent peer-placeholder-shown:px-0 peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal
-                             peer-focus:-top-2 peer-focus:left-3 peer-focus:text-[10px] peer-focus:text-blue-300 peer-focus:bg-[#0D1B4A] peer-focus:px-1.5 peer-focus:font-bold peer-focus:uppercase peer-focus:tracking-widest"
-                  style={{ letterSpacing: "0.15em" }}
-                >
-                  Username
-                </label>
               </div>
 
               {/* Password */}
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password-input"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder=" "
-                  className="peer w-full rounded-xl pl-4 pr-11 pt-5 pb-2.5 text-sm text-white outline-none transition-all duration-200"
-                  style={{ 
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "rgba(59,130,246,0.5)";
-                    e.target.style.background = "rgba(255,255,255,0.06)";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.1)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "rgba(255,255,255,0.1)";
-                    e.target.style.background = "rgba(255,255,255,0.04)";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
+              <div className="space-y-1.5">
                 <label 
                   htmlFor="password-input"
-                  className="absolute left-3 -top-2 text-[10px] text-blue-200 bg-[#0D1B4A] px-1.5 font-bold uppercase tracking-widest transition-all duration-200 pointer-events-none
-                             peer-placeholder-shown:text-sm peer-placeholder-shown:text-slate-400 peer-placeholder-shown:top-3.5 peer-placeholder-shown:left-4 peer-placeholder-shown:bg-transparent peer-placeholder-shown:px-0 peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal
-                             peer-focus:-top-2 peer-focus:left-3 peer-focus:text-[10px] peer-focus:text-blue-300 peer-focus:bg-[#0D1B4A] peer-focus:px-1.5 peer-focus:font-bold peer-focus:uppercase peer-focus:tracking-widest"
+                  className="block text-[10px] text-blue-200 font-bold uppercase tracking-widest"
                   style={{ letterSpacing: "0.15em" }}
                 >
                   Password
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  title={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password-input"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full rounded-xl pl-4 pr-11 py-3.5 text-sm text-white outline-none transition-all duration-200"
+                    style={{ 
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "rgba(59,130,246,0.5)";
+                      e.target.style.background = "rgba(255,255,255,0.06)";
+                      e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.1)";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "rgba(255,255,255,0.1)";
+                      e.target.style.background = "rgba(255,255,255,0.04)";
+                      e.target.style.boxShadow = "none";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               {/* Submit */}

@@ -116,38 +116,52 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050608] text-zinc-100">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(202,160,53,0.18),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_30%),linear-gradient(180deg,_rgba(9,11,16,0.98),_rgba(5,6,8,1))]" />
-      <div className="absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full bg-amber-500/10 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#FAFBFF] via-[#F1F5F9] to-[#E2E8F0] text-slate-800">
+      {/* Background radial orbs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute left-[-10%] top-[-10%] w-[45%] h-[45%] rounded-full bg-blue-600/5 blur-[120px]" />
+        <div className="absolute right-[-10%] bottom-[-10%] w-[45%] h-[45%] rounded-full bg-red-600/5 blur-[120px]" />
+      </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="mb-4 flex items-center justify-between rounded-3xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-400/10 text-amber-300 shadow-[0_0_30px_rgba(202,160,53,0.12)]">
-              <Bot className="h-5 w-5" />
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
+        <header 
+          className="mb-4 flex items-center justify-between rounded-3xl px-6 py-4 shadow-lg text-white"
+          style={{ 
+            background: "linear-gradient(135deg, #0D1B4A 0%, #132254 100%)",
+            borderBottom: "3px solid #DC2626"
+          }}
+        >
+          <div className="flex items-center gap-4">
+            {/* Logo container */}
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white p-1 shadow-md">
+              <img 
+                src="/logo.png" 
+                alt="Hotel Devang Logo" 
+                className="h-7 w-7 object-contain"
+              />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300/80">Hotel Devang AI Assistant</p>
-              <h1 className="text-lg font-semibold text-white">FRIDAY</h1>
+              <p className="text-[9px] font-bold uppercase tracking-[0.25em]" style={{ color: "#93C5FD" }}>Hotel Devang AI Assistant</p>
+              <h1 className="text-lg font-bold tracking-wider" style={{ fontFamily: "Georgia, serif" }}>FRIDAY</h1>
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-300 md:flex">
-            <ShieldCheck className="h-4 w-4" />
+          <div className="hidden items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 md:flex font-semibold">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
             Tool calling enabled
           </div>
         </header>
 
         <div className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1.55fr)_380px]">
-          <main className="flex min-h-[72vh] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-zinc-950/60 shadow-2xl shadow-black/40 backdrop-blur-xl">
-            <div className="border-b border-white/10 px-5 py-4 sm:px-6">
-              <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-                <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-amber-300">
-                  <Sparkles className="h-3.5 w-3.5" />
+          <main className="flex min-h-[72vh] flex-col overflow-hidden rounded-[28px] border border-blue-100/60 bg-white/80 shadow-xl backdrop-blur-xl">
+            <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 font-semibold text-blue-700">
+                  <Sparkles className="h-3.5 w-3.5 text-blue-600" />
                   Live database responses
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                  <Clock3 className="h-3.5 w-3.5" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-semibold text-slate-600">
+                  <Clock3 className="h-3.5 w-3.5 text-slate-500" />
                   Check availability, price, policies, and booking status
                 </span>
               </div>
@@ -160,14 +174,17 @@ export default function AssistantPage() {
                   className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[92%] rounded-3xl px-4 py-3 text-sm leading-relaxed shadow-lg sm:max-w-[78%] ${
+                    className={`max-w-[92%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm sm:max-w-[78%] ${
                       message.role === "user"
-                        ? "border border-amber-400/20 bg-amber-400/15 text-amber-50"
-                        : "border border-white/10 bg-white/6 text-zinc-100"
+                        ? "bg-gradient-to-r from-[#1E3A8A] to-[#132254] text-white rounded-tr-none"
+                        : "bg-white border border-slate-100 text-slate-800 rounded-tl-none"
                     }`}
                   >
-                    <div className="mb-1 text-[10px] uppercase tracking-[0.24em] text-zinc-400">
-                      {message.role === "user" ? "You" : "FRIDAY"}
+                    <div 
+                      className="mb-1 text-[9px] font-bold uppercase tracking-[0.2em]"
+                      style={{ color: message.role === "user" ? "#93C5FD" : "#DC2626" }}
+                    >
+                      {message.role === "user" ? "You" : "FRIDAY AI"}
                     </div>
                     <p className="whitespace-pre-wrap">{message.content}</p>
                   </div>
@@ -176,7 +193,8 @@ export default function AssistantPage() {
 
               {isSending && (
                 <div className="flex justify-start">
-                  <div className="rounded-3xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-zinc-300 shadow-lg">
+                  <div className="rounded-2xl rounded-tl-none border border-slate-100 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
                     Thinking with live hotel data...
                   </div>
                 </div>
@@ -185,10 +203,10 @@ export default function AssistantPage() {
               <div ref={bottomRef} />
             </div>
 
-            <form onSubmit={handleSubmit} className="border-t border-white/10 p-4 sm:p-5">
-              <div className="flex flex-col gap-3 rounded-[24px] border border-white/10 bg-white/5 p-3 shadow-inner shadow-black/20 sm:flex-row sm:items-end">
+            <form onSubmit={handleSubmit} className="border-t border-slate-100 p-4 sm:p-5">
+              <div className="flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-slate-50/50 p-3 focus-within:border-blue-400/40 focus-within:ring-2 focus-within:ring-blue-500/5 sm:flex-row sm:items-end">
                 <label className="flex-1">
-                  <span className="mb-2 block text-[10px] uppercase tracking-[0.28em] text-zinc-500">Ask the assistant</span>
+                  <span className="mb-2 block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Ask the assistant</span>
                   <textarea
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
@@ -200,34 +218,37 @@ export default function AssistantPage() {
                     }}
                     placeholder="Example: Is Suite Room available on 15 June?"
                     rows={3}
-                    className="min-h-[84px] w-full resize-none rounded-2xl border border-white/10 bg-[#07090d] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-amber-400/40 focus:ring-2 focus:ring-amber-400/10"
+                    className="min-h-[84px] w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/10"
                   />
                 </label>
 
                 <button
                   type="submit"
                   disabled={isSending}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 px-5 py-3 text-sm font-semibold text-[#111111] shadow-lg shadow-amber-500/20 transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1E3A8A] to-[#DC2626] hover:from-[#132254] hover:to-[#B91C1C] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-900/15 transition-all duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 shrink-0"
                 >
                   <Send className="h-4 w-4" />
                   Send
                 </button>
               </div>
 
-              {error && <p className="mt-3 text-xs text-red-300">{error}</p>}
+              {error && <p className="mt-3 text-xs text-red-500 font-semibold">{error}</p>}
             </form>
           </main>
 
           <aside className="space-y-4">
-            <section className="rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
-              <p className="text-[10px] uppercase tracking-[0.32em] text-amber-300/80">Quick prompts</p>
+            <section className="rounded-[28px] border border-blue-100/60 bg-white/80 p-5 shadow-lg backdrop-blur-xl">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] pb-3 border-b border-slate-100 flex items-center gap-2" style={{ color: "#0D1B4A" }}>
+                <Sparkles className="h-4 w-4 text-red-600" />
+                Quick Prompts
+              </p>
               <div className="mt-4 grid gap-3">
                 {QUICK_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => setInput(prompt)}
-                    className="rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-left text-sm text-zinc-200 transition-colors hover:border-amber-400/30 hover:bg-amber-400/10"
+                    className="rounded-xl border border-slate-100 bg-white/50 px-4 py-3 text-left text-sm text-slate-700 transition-all duration-200 hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-800 shadow-sm hover:shadow-md"
                   >
                     {prompt}
                   </button>
@@ -235,37 +256,40 @@ export default function AssistantPage() {
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-white/10 bg-zinc-950/60 p-5 backdrop-blur-xl">
-              <p className="text-[10px] uppercase tracking-[0.32em] text-amber-300/80">What I can do</p>
-              <div className="mt-4 space-y-3 text-sm text-zinc-300">
-                <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-                  <CalendarDays className="mt-0.5 h-4 w-4 text-amber-300" />
-                  <span>Fetch active room restrictions & blocked dates.</span>
+            <section className="rounded-[28px] border border-blue-100/60 bg-white/80 p-5 shadow-lg backdrop-blur-xl">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] pb-3 border-b border-slate-100 flex items-center gap-2" style={{ color: "#0D1B4A" }}>
+                <Bot className="h-4 w-4 text-blue-600" />
+                Capabilities
+              </p>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/40 p-3 shadow-sm">
+                  <CalendarDays className="mt-0.5 h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs text-slate-600 leading-relaxed">Fetch active room restrictions & blocked dates.</span>
                 </div>
-                <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-                  <Wallet className="mt-0.5 h-4 w-4 text-amber-300" />
-                  <span>Retrieve configured room prices and seasonal rates.</span>
+                <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/40 p-3 shadow-sm">
+                  <Wallet className="mt-0.5 h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs text-slate-600 leading-relaxed">Retrieve configured room prices and seasonal rates.</span>
                 </div>
-                <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-                  <Users className="mt-0.5 h-4 w-4 text-amber-300" />
-                  <span>Analyze daily occupancy stats & booking counts.</span>
+                <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/40 p-3 shadow-sm">
+                  <Users className="mt-0.5 h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs text-slate-600 leading-relaxed">Analyze daily occupancy stats & booking counts.</span>
                 </div>
-                <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-                  <Ticket className="mt-0.5 h-4 w-4 text-amber-300" />
-                  <span>Look up guest bookings and payment status.</span>
+                <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/40 p-3 shadow-sm">
+                  <Ticket className="mt-0.5 h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs text-slate-600 leading-relaxed">Look up guest bookings and payment status.</span>
                 </div>
               </div>
             </section>
 
             <Link
               href="/dashboard"
-              className="flex items-center justify-between rounded-[24px] border border-amber-400/20 bg-amber-400/10 px-5 py-4 text-sm text-amber-100 transition-colors hover:bg-amber-400/15"
+              className="flex items-center justify-between rounded-[20px] border border-blue-200 bg-blue-50/50 px-5 py-4 text-sm font-semibold text-blue-800 transition-all duration-200 hover:bg-blue-100/70 shadow-sm"
             >
-              <span className="inline-flex items-center gap-2 font-medium">
+              <span className="inline-flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Back to dashboard
               </span>
-              <span className="text-xs uppercase tracking-[0.24em] text-amber-200/80">Internal</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-blue-600/80">Internal</span>
             </Link>
           </aside>
         </div>

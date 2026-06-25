@@ -475,7 +475,8 @@ export default function BookingsManagement() {
                   {/* Bill header */}
                   <div className="text-center pb-4 border-b border-zinc-200">
                     <span className="text-xl font-bold tracking-widest block text-red-900" style={{ fontFamily: "Georgia, serif", color: "#880000" }}>HOTEL DEVANG</span>
-                    <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-semibold block mt-0.5">Near Dwarkadhish Temple, Dwarka, Gujarat</span>
+                    <span className="text-[9px] text-zinc-500 font-semibold block mt-0.5" style={{ fontFamily: "monospace", fontSize: "9px" }}>GSTIN: 24AADFH4542D2ZU</span>
+                    <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-semibold block mt-0.5">Opp Circuit House, Hospital Rd, Dwarka, Gujarat 361335</span>
                     <span className="text-[10px] text-zinc-400 font-mono block mt-1">Ph: +91 98244 02132</span>
                     
                     <div className="border-t border-b border-double border-red-900/30 py-1.5 mt-3 bg-red-50/30">

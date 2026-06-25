@@ -38,89 +38,7 @@ async function getRoomRate(roomType: string, subtype: string): Promise<number> {
   }
 }
 
-async function sendAutoWhatsAppReceipt(booking: any) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
-  if (!token || !phoneId) {
-    console.log("WhatsApp credentials not set in .env. Skipping automatic receipt dispatch.");
-    return;
-  }
-
-  try {
-    let cleanPhone = booking.phone.replace(/\D/g, "");
-    if (cleanPhone.length === 10) {
-      cleanPhone = "91" + cleanPhone;
-    }
-
-    const checkInDateStr = new Date(booking.checkIn).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
-    const checkOutDateStr = new Date(booking.checkOut).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
-    
-    let roomsDetails = "";
-    booking.rooms.forEach((room: any) => {
-        const mattressCount = room.guests > 2 && room.roomType !== "Standard" ? room.guests - 2 : 0;
-        const desc = `${room.quantity}x ${room.roomType} (${room.selectedSubtype})${mattressCount > 0 ? ` + ${mattressCount} Extra Mattress${mattressCount > 1 ? 'es' : ''}` : ''}`;
-        roomsDetails += `• ${desc} (Rate: ₹${room.pricePerNight}/night)\n`;
-    });
-
-    const textMessage = `*HOTEL DEVANG DWARKA*\n*Provisional Booking Confirmation*\n\nDear *${booking.guestName}*,\n\nYour stay reservation at Hotel Devang has been provisionally confirmed!\n\n*Booking Details:*\n• *Booking ID:* ${booking.bookingId}\n• *Stay Period:* ${checkInDateStr} to ${checkOutDateStr}\n• *Primary Guest:* ${booking.guestName}\n• *Phone Number:* +${cleanPhone}\n\n*Room Setup:*\n${roomsDetails}\n*Tariff Breakdown:*\n• *Sum Stay Tariff:* ₹${booking.totalAmount.toLocaleString("en-IN")}\n• *Advance Paid (Online):* ₹${booking.paidAmount.toLocaleString("en-IN")}\n• *BALANCE DUE AT CHECK-IN:* *₹${booking.dueAmount.toLocaleString("en-IN")}*\n\n*Important Guidelines:*\n• *Checkout Timing:* 10:00 AM standard (max grace up to 10:30 AM).\n• *Check-in Timing:* Starts from 12:30 PM due to room cleaning.\n• *Mandatory Security:* Physical government-approved photo ID is required for all adult members at check-in.\n\nThank you for choosing Hotel Devang! We look forward to welcoming you to sacred Dwarka!\n\n_Ph: +91 98244 02132_\n_Website: hoteldevang.com_`;
-
-    const response = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: cleanPhone,
-        type: "text",
-        text: {
-          preview_url: false,
-          body: textMessage
-        }
-      })
-    });
-
-    const data = await response.json();
-    console.log("WhatsApp Auto-Receipt sent successfully:", data);
-  } catch (error) {
-    console.error("Failed to automatically dispatch WhatsApp receipt:", error);
-  }
-}
-
-async function sendOwnerWhatsAppNotification(booking: any) {
-  const serviceUrl = process.env.WHATSAPP_SERVICE_URL || "https://hotel-booking-1-gg1m.onrender.com";
-  try {
-    console.log(`Sending owner WhatsApp notification request to: ${serviceUrl}/api/whatsapp/notify...`);
-    const response = await fetch(`${serviceUrl}/api/whatsapp/notify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        bookingId: booking.bookingId,
-        guestName: booking.guestName,
-        phone: booking.phone,
-        roomType: booking.roomType,
-        selectedSubtype: booking.selectedSubtype,
-        checkIn: booking.checkIn,
-        checkOut: booking.checkOut,
-        totalAmount: booking.totalAmount,
-        paidAmount: booking.paidAmount,
-        dueAmount: booking.dueAmount,
-        paymentStatus: booking.paymentStatus,
-        specialRequests: booking.specialRequests,
-        rooms: booking.rooms
-      })
-    });
-    const data = await response.json();
-    console.log("Owner WhatsApp notification response:", data);
-  } catch (error) {
-    console.error("Failed to notify owner via Express WhatsApp service:", error);
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -291,15 +209,7 @@ export async function POST(request: Request) {
         razorpayPaymentId: razorpay_payment_id
       }
     });
-    // Await background auto-WhatsApp receipt dispatcher
-    await sendAutoWhatsAppReceipt(createdBooking).catch(err => {
-      console.error("WhatsApp auto-dispatch background error:", err);
-    });
 
-    // Await notifying Owner on WhatsApp via our Express service
-    await sendOwnerWhatsAppNotification(createdBooking).catch(err => {
-      console.error("Failed to trigger owner WhatsApp notification background task:", err);
-    });
 
     return corsResponse(NextResponse.json({
       success: true,

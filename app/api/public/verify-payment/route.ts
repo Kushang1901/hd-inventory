@@ -162,7 +162,7 @@ export async function POST(request: Request) {
 
     const roomDetailsForSave = await Promise.all(rooms.map(async (room: any) => {
       const baseRate = await getRoomRate(room.roomType, room.selectedSubtype);
-      const mattressCount = (room.guests > 2 && room.roomType !== "Standard") ? (room.guests - 2) : 0;
+      const mattressCount = (room.guests > 2) ? (room.guests - 2) : 0;
       const rate = baseRate + (mattressCount * 350);
       calculatedTotal += rate * room.quantity * nights;
       

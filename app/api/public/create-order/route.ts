@@ -204,7 +204,7 @@ export async function POST(request: Request) {
       }
 
       // Check capacity rules
-      const maxAllowed = roomType === "Standard" ? 2 : 5;
+      const maxAllowed = roomType === "Standard" ? 3 : 5;
       if (guests > maxAllowed) {
         return corsResponse(NextResponse.json({
           success: false, 
@@ -214,7 +214,7 @@ export async function POST(request: Request) {
 
       // Calculate the fare night-by-night
       let roomTotalRate = 0;
-      const mattressCount = (guests > 2 && roomType !== "Standard") ? (guests - 2) : 0;
+      const mattressCount = (guests > 2) ? (guests - 2) : 0;
       const mattressCharge = mattressCount * 350;
 
       for (let i = 0; i < nights; i++) {

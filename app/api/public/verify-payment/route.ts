@@ -39,6 +39,81 @@ async function getRoomRate(roomType: string, subtype: string): Promise<number> {
 }
 
 
+async function sendOwnerTelegramNotification(booking: any) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  
+  if (!botToken || !chatId) {
+    console.warn("Telegram bot token or chat ID is missing. Skipping owner notification.");
+    return;
+  }
+
+  // Format Dates nicely in Indian Standard Time (IST)
+  const checkInDateStr = new Date(booking.checkIn).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
+  const checkOutDateStr = new Date(booking.checkOut).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
+
+  // Format room details
+  let roomDetails = "";
+  if (booking.rooms && booking.rooms.length > 0) {
+    roomDetails = booking.rooms.map((r: any) => {
+      const mattressCount = r.guests > 2 && r.roomType !== "Standard" ? r.guests - 2 : 0;
+      return `${r.quantity}x ${r.roomType} (${r.selectedSubtype})${mattressCount > 0 ? ` + ${mattressCount} Extra Mattress` : ''}`;
+    }).join(", ");
+  } else if (booking.roomType) {
+    roomDetails = `${booking.roomType} (${booking.selectedSubtype || ""})`;
+  }
+
+  const escapeHTML = (text: string) => {
+    if (!text) return "";
+    return text.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  };
+
+  const cleanPhone = booking.phone ? booking.phone.toString().replace(/\D/g, "") : "N/A";
+  const guestName = escapeHTML(booking.guestName);
+  const roomDetailsEscaped = escapeHTML(roomDetails);
+  const totalAmount = (booking.totalAmount || 0).toLocaleString("en-IN");
+  const paidAmount = (booking.paidAmount || 0).toLocaleString("en-IN");
+  const dueAmount = (booking.dueAmount || 0).toLocaleString("en-IN");
+  const paymentStatus = escapeHTML(booking.paymentStatus || "N/A");
+  const specialRequests = escapeHTML(booking.specialRequests || 'None');
+
+  const htmlMessage = `<b>🛎️ NEW HOTEL BOOKING SUCCESS 🛎️</b>\n\n` +
+    `Dear Owner,\n` +
+    `A new stay reservation has been successfully booked and confirmed!\n\n` +
+    `<b>📝 Booking Information:</b>\n` +
+    `• <b>Booking ID:</b> ${booking.bookingId}\n` +
+    `• <b>Guest Name:</b> ${guestName}\n` +
+    `• <b>Phone Number:</b> +${cleanPhone}\n\n` +
+    `<b>🛏️ Room Details:</b>\n` +
+    `• <b>Room Type:</b> ${roomDetailsEscaped}\n` +
+    `• <b>Stay Period:</b> ${checkInDateStr} to ${checkOutDateStr}\n\n` +
+    `<b>💰 Tariff & Payment:</b>\n` +
+    `• <b>Sum Stay Tariff:</b> ₹${totalAmount}\n` +
+    `• <b>Paid Advance:</b> ₹${paidAmount}\n` +
+    `• <b>Due Balance:</b> <b>₹${dueAmount}</b>\n` +
+    `• <b>Payment Status:</b> ${paymentStatus}\n\n` +
+    `<b>✍️ Special Requests:</b> ${specialRequests}\n\n` +
+    `🎉 <b>Hotel Devang, Dwarka</b>`;
+
+  try {
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: htmlMessage,
+        parse_mode: "HTML"
+      })
+    });
+    const data = await response.json();
+    console.log("Telegram Owner Notification Response:", data);
+  } catch (error) {
+    console.error("Failed to notify owner via Telegram:", error);
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -210,6 +285,10 @@ export async function POST(request: Request) {
       }
     });
 
+    // Await notifying Owner on Telegram directly
+    await sendOwnerTelegramNotification(createdBooking).catch(err => {
+      console.error("Failed to trigger owner Telegram notification background task:", err);
+    });
 
     return corsResponse(NextResponse.json({
       success: true,

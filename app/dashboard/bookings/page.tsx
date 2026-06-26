@@ -120,16 +120,6 @@ export default function BookingsManagement() {
       if (element) {
         const html2pdf = (window as any).html2pdf;
         if (html2pdf) {
-          // Clone the element and render it off-screen to avoid blank page scroll offsets
-          const clone = element.cloneNode(true) as HTMLElement;
-          clone.style.position = "absolute";
-          clone.style.left = "-9999px";
-          clone.style.top = "0";
-          clone.style.width = "800px";
-          clone.style.background = "#ffffff";
-          clone.style.color = "#000000";
-          document.body.appendChild(clone);
-
           const opt = {
             margin: [0.4, 0.4, 0.4, 0.4],
             filename: `Hotel_Devang_Provisional_Bill_${selectedBooking.bookingId}.pdf`,
@@ -137,9 +127,7 @@ export default function BookingsManagement() {
             html2canvas: { scale: 2.5, useCORS: true, scrollY: 0, scrollX: 0 },
             jsPDF: { unit: "in", format: "a4", orientation: "portrait" }
           };
-          html2pdf().from(clone).set(opt).save().then(() => {
-            document.body.removeChild(clone);
-          });
+          html2pdf().from(element).set(opt).save();
         }
       }
     };
@@ -189,28 +177,55 @@ export default function BookingsManagement() {
         {/* Print Specific CSS style injection */}
         <style jsx global>{`
           @media print {
-            body * {
-              visibility: hidden;
-              background: #fff !important;
-              color: #000 !important;
+            aside, header, main > a, .no-print {
+              display: none !important;
             }
-            #print-receipt-section, #print-receipt-section * {
-              visibility: visible;
+            body, main {
+              background: white !important;
+              color: black !important;
+              padding: 0 !important;
+              margin: 0 !important;
             }
-            #print-receipt-section {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              padding: 1.5cm;
-              margin: 0;
+            .fixed.inset-0.z-50 {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              height: auto !important;
+              background: white !important;
+              backdrop-filter: none !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              display: block !important;
+              overflow: visible !important;
+              z-index: auto !important;
+            }
+            .fixed.inset-0.z-50 > div {
+              position: relative !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              height: auto !important;
+              max-height: none !important;
+              overflow: visible !important;
+              background: white !important;
+              border: none !important;
+              box-shadow: none !important;
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+            .fixed.inset-0.z-50 div.border-amber-200\/50 {
               border: none !important;
               box-shadow: none !important;
               background: white !important;
-              color: black !important;
+              padding: 0 !important;
+              margin: 0 !important;
             }
-            .no-print {
-              display: none !important;
+            #print-receipt-section {
+              width: 100% !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              background: white !important;
+              color: black !important;
             }
           }
         `}</style>
@@ -363,7 +378,7 @@ export default function BookingsManagement() {
 
       {/* Details & Invoicing Modal */}
       {modalOpen && selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm no-print" style={{ background: "rgba(13,27,74,0.6)" }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" style={{ background: "rgba(13,27,74,0.6)" }}>
           <div
             className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 md:p-8 shadow-2xl animate-scaleUp"
             style={{ background: "white", border: "1px solid rgba(202,160,53,0.25)", color: "#334155" }}
@@ -371,14 +386,14 @@ export default function BookingsManagement() {
             {/* Close button */}
             <button
               onClick={() => setModalOpen(false)}
-              className="absolute top-4 right-4 rounded-xl p-2 transition outline-none cursor-pointer hover:bg-zinc-100"
+              className="absolute top-4 right-4 rounded-xl p-2 transition outline-none cursor-pointer hover:bg-zinc-100 no-print"
               style={{ color: "#94A3B8", background: "#F8FAFC" }}
             >
               <X className="h-5 w-5" />
             </button>
 
             <h2
-              className="text-xl font-bold pb-4 mb-6 flex items-center gap-2"
+              className="text-xl font-bold pb-4 mb-6 flex items-center gap-2 no-print"
               style={{ fontFamily: "Georgia, serif", color: "#880000", borderBottom: "2px solid", borderImage: "linear-gradient(90deg, #880000, #caa035) 1" }}
             >
               <FileText className="h-5 w-5" style={{ color: "#caa035" }} />
@@ -387,7 +402,7 @@ export default function BookingsManagement() {
 
             <div className="grid gap-6 md:grid-cols-2">
               {/* Left Column: Guest info & quick action controls */}
-              <div className="space-y-6">
+              <div className="space-y-6 no-print">
                 <div>
                   <h3 className="text-xs uppercase tracking-wider font-bold mb-3" style={{ color: "#caa035" }}>Guest Profile</h3>
                   <div className="rounded-xl p-4 space-y-2 text-xs" style={{ background: "#FAF9F6", border: "1px solid rgba(202,160,53,0.15)" }}>

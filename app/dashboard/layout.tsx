@@ -477,7 +477,7 @@ export default function DashboardLayout({
 
           {/* FRIDAY tooltip */}
           {showTooltip && (
-            <div className="fixed bottom-[96px] right-6 z-50 transition-all duration-500 animate-fadeIn font-sans">
+            <div className="fixed bottom-[96px] right-6 z-50 transition-all duration-500 animate-fadeIn font-sans no-print">
               <div 
                 className="relative rounded-2xl p-4 max-w-[270px]"
                 style={{ 
@@ -506,7 +506,7 @@ export default function DashboardLayout({
           {/* FRIDAY Floating Button */}
           <Link
             href="/assistant"
-            className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 animate-bob"
+            className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 animate-bob no-print"
             title="Chat with FRIDAY"
             style={{ 
               background: "linear-gradient(135deg, #1E3A8A, #DC2626)",

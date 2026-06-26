@@ -113,64 +113,7 @@ model Room {
   @@map("rooms")
 }
 
-// 7. WhatsApp Booking Notifications
-model WhatsAppBookingNotification {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  bookingId String    @unique
-  status    String
-  sentAt    DateTime?
-  payload   Json?
-  lastError String?
-  updatedAt DateTime  @updatedAt
 
-  @@map("whatsapp_booking_notifications")
-}
-
-// 8. WhatsApp Failed Retries
-model WhatsAppFailedRetry {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  bookingId     String   @unique
-  recipient     String
-  message       String
-  attempts      Int
-  maxAttempts   Int      @default(3)
-  lastAttemptAt DateTime
-  nextAttemptAt DateTime
-  status        String
-  error         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@map("whatsapp_failed_retries")
-}
-
-// 9. WhatsApp Notification Logs
-model WhatsAppNotificationLog {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  bookingId String
-  recipient String
-  message   String
-  status    String
-  error     String?
-  timestamp DateTime @default(now())
-
-  @@map("whatsapp_notification_logs")
-}
-
-// 10. WhatsApp Sessions
-model WhatsAppSession {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  clientId        String    @unique
-  status          String
-  qrCode          String?
-  ownerNumber     String?
-  lastConnectedAt DateTime?
-  error           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@map("whatsapp_sessions")
-}
 
 // 11. Hotel Policies
 model HotelPolicy {
@@ -213,4 +156,19 @@ model ChatSession {
   timestamp   DateTime @default(now())
 
   @@map("chat_sessions")
+}
+
+// 15. Room Restrictions (partial room count blocking per date range)
+model RoomRestriction {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  startDate    DateTime
+  endDate      DateTime
+  roomType     String   // "Standard", "Deluxe", "Super Deluxe", "Suite"
+  totalRooms   Int      // Total physical rooms for that type (reference)
+  blockedCount Int      // How many rooms are blocked (owner-set cap)
+  reason       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("room_restrictions")
 }

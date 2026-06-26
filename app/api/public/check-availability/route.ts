@@ -108,6 +108,23 @@ export async function GET(request: Request) {
       }
     });
 
+    // 3b. Fetch room restrictions overlapping this range to reduce effective capacity
+    const overlappingRestrictions = await prisma.roomRestriction.findMany({
+      where: {
+        startDate: { lte: checkOut },
+        endDate: { gte: checkIn }
+      }
+    });
+
+    // Build a map of roomType => max blockedCount across all overlapping restrictions
+    const restrictionBlockedCounts: { [key: string]: number } = {};
+    overlappingRestrictions.forEach((r: any) => {
+      const existing = restrictionBlockedCounts[r.roomType] || 0;
+      if (r.blockedCount > existing) {
+        restrictionBlockedCounts[r.roomType] = r.blockedCount;
+      }
+    });
+
     // 4. Room Configuration Details - Dynamically queried from MongoDB with seasonal overrides
     const dbPrices = await prisma.roomPrice.findMany({});
     const seasonalPrices = await prisma.seasonalPrice.findMany({
@@ -146,7 +163,7 @@ export async function GET(request: Request) {
       {
         id: "Standard",
         name: "Standard Room",
-        maxPersons: 2,
+        maxPersons: 3,
         subtypes: [
           { name: "AC Room", code: "AC", price: getDbPrice("Standard", "AC", 1500) },
           { name: "Non-AC Room", code: "Non-AC", price: getDbPrice("Standard", "Non-AC", 1200) }
@@ -182,9 +199,11 @@ export async function GET(request: Request) {
 
     // Calculate dynamic availability
     const roomsAvailability = roomTypesMetadata.map((room) => {
-      let available = totalCapacities[room.id] - (bookedCounts[room.id] || 0);
+      const restrictionBlock = restrictionBlockedCounts[room.id] || 0;
+      const effectiveCapacity = Math.max(0, totalCapacities[room.id] - restrictionBlock);
+      let available = effectiveCapacity - (bookedCounts[room.id] || 0);
 
-      // Apply date block rules
+      // Apply full date block rules (full block wins over restriction)
       if (isHotelFullyBlocked || blockedRoomTypes.has(room.id)) {
         available = 0;
       }
@@ -193,6 +212,8 @@ export async function GET(request: Request) {
         ...room,
         totalCapacity: totalCapacities[room.id],
         bookedCount: bookedCounts[room.id] || 0,
+        restrictedCount: restrictionBlock,
+        effectiveCapacity,
         availableCount: Math.max(0, available)
       };
     });

@@ -16,24 +16,28 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     if (!(await isAdmin())) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
     await connectToDatabase();
-    const { id } = await params;
+    console.log(`[API] Fetching booking details for ID: ${id}`);
 
     const booking = await prisma.booking.findUnique({
       where: { id }
     });
     
     if (!booking) {
+      console.warn(`[API] Booking not found for ID: ${id}`);
       return NextResponse.json({ success: false, error: "Booking not found" }, { status: 404 });
     }
 
+    console.log(`[API] Successfully retrieved booking: ${booking.bookingId}`);
     return NextResponse.json({ success: true, data: booking });
   } catch (err: any) {
+    console.error(`[API] Error retrieving booking ID ${id}:`, err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
@@ -43,20 +47,23 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     if (!(await isAdmin())) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
     await connectToDatabase();
-    const { id } = await params;
     const updates = await request.json();
+    
+    console.log(`[API] Received update request for Booking ID: ${id}`, updates);
 
     const booking = await prisma.booking.findUnique({
       where: { id }
     });
 
     if (!booking) {
+      console.warn(`[API] Booking not found for update: ID: ${id}`);
       return NextResponse.json({ success: false, error: "Booking not found" }, { status: 404 });
     }
 
@@ -96,6 +103,8 @@ export async function PATCH(
       }
     }
 
+    console.log(`[API] Applying DB Updates: status=${bookingStatus}, payment=${paymentStatus}, paid=${paidAmount}, due=${dueAmount}`);
+
     const updatedBooking = await prisma.booking.update({
       where: { id },
       data: {
@@ -106,8 +115,11 @@ export async function PATCH(
       }
     });
 
+    console.log(`[API] Successfully updated booking in DB: ${updatedBooking.bookingId}`);
     return NextResponse.json({ success: true, data: updatedBooking });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    console.error(`[API] Error updating booking ID ${id}:`, err);
+    return NextResponse.json({ success: false, error: err.message || "Failed to update booking" }, { status: 500 });
   }
 }
+

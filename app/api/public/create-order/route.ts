@@ -8,8 +8,8 @@ export async function OPTIONS() {
 }
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_live_SsrjT2eFY7oLhR",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "prfL6Ukue8SXh2D2OrMPODzL"
+  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_SsUweEky8qbyAL",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "rkpHwK2w8V4TTQkzWtTlsYRq"
 });
 
 // Price lookup helper (Dynamic lookup on server side for safety)
@@ -204,7 +204,7 @@ export async function POST(request: Request) {
       }
 
       // Check capacity rules
-      const maxAllowed = roomType === "Standard" ? 2 : 5;
+      const maxAllowed = roomType === "Standard" ? 3 : 5;
       if (guests > maxAllowed) {
         return corsResponse(NextResponse.json({
           success: false, 
@@ -214,7 +214,7 @@ export async function POST(request: Request) {
 
       // Calculate the fare night-by-night
       let roomTotalRate = 0;
-      const mattressCount = (guests > 2 && roomType !== "Standard") ? (guests - 2) : 0;
+      const mattressCount = (guests > 2) ? (guests - 2) : 0;
       const mattressCharge = mattressCount * 350;
 
       for (let i = 0; i < nights; i++) {
@@ -244,7 +244,7 @@ export async function POST(request: Request) {
 
     return corsResponse(NextResponse.json({
       success: true,
-      keyId: process.env.RAZORPAY_KEY_ID || "rzp_live_SsrjT2eFY7oLhR",
+      keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_SsUweEky8qbyAL",
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,

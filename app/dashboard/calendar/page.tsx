@@ -356,42 +356,60 @@ export default function CalendarDashboard() {
   const selectedDateStats = getDateStats(selectedDate);
 
   return (
-    <div className="space-y-8 animate-fadeIn text-sm text-zinc-300">
+    <div className="space-y-6 animate-fadeIn text-sm text-slate-700">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-serif text-white font-semibold flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6 text-amber-500" />
-            <span>Interactive Availability Calendar</span>
-          </h1>
-          <p className="text-xs md:text-sm text-zinc-500">
-            Monitor real-time reservations, blocked dates, and available room allocations day by day.
-          </p>
-        </div>
+      <div className="flex flex-col gap-1">
+        <h1 
+          className="text-2xl md:text-3xl font-bold flex items-center gap-2.5"
+          style={{ 
+            fontFamily: "Georgia, serif",
+            background: "linear-gradient(135deg, #0D1B4A, #1D4ED8)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text"
+          }}
+        >
+          <CalendarIcon className="h-6 w-6 shrink-0" style={{ color: "#DC2626" }} />
+          <span>Interactive Availability Calendar</span>
+        </h1>
+        <p className="text-xs md:text-sm text-slate-500">
+          Monitor real-time reservations, blocked dates, and available room allocations day by day.
+        </p>
       </div>
 
       {loading ? (
         <div className="text-center py-28">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-500 mx-auto mb-4"></div>
-          <p className="text-zinc-500">Compiling occupancy calendar...</p>
+          <div 
+            className="relative mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-transparent"
+            style={{ borderTopColor: "#DC2626", borderRightColor: "#1D4ED8" }}
+          />
+          <p className="text-slate-400 text-xs">Compiling occupancy calendar...</p>
         </div>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3">
           
           {/* Column 1 & 2: Interactive Calendar Grid */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 space-y-6">
+            <div 
+              className="rounded-2xl p-6 space-y-6"
+              style={{ 
+                background: "white",
+                border: "1px solid rgba(29,78,216,0.1)",
+                boxShadow: "0 4px 20px rgba(13,27,74,0.06)"
+              }}
+            >
               
               {/* Calendar Month Selector Header */}
-              <div className="flex items-center justify-between border-b border-zinc-800/60 pb-4">
-                <h2 className="text-lg font-serif font-medium text-white flex items-center gap-2">
+              <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: "#F1F5F9" }}>
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2" style={{ fontFamily: "Georgia, serif" }}>
                   <span>{currentMonth.toLocaleString("default", { month: "long" })}</span>
-                  <span className="text-amber-500 font-mono font-bold">{year}</span>
+                  <span className="font-mono font-bold" style={{ color: "#1D4ED8" }}>{year}</span>
                 </h2>
                 <div className="flex gap-2">
                   <button 
                     onClick={handlePrevMonth}
-                    className="p-2 border border-zinc-800 bg-zinc-950/60 rounded-lg hover:border-amber-500/30 text-zinc-400 hover:text-white transition cursor-pointer"
+                    className="p-2 border border-slate-200 bg-slate-50 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition cursor-pointer"
+                    type="button"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -400,13 +418,15 @@ export default function CalendarDashboard() {
                       setCurrentMonth(new Date());
                       setSelectedDate(new Date());
                     }}
-                    className="px-3 py-1 border border-zinc-800 bg-zinc-950/60 text-xs font-medium rounded-lg hover:border-amber-500/30 text-zinc-400 hover:text-white transition cursor-pointer"
+                    className="px-3.5 py-1 border border-slate-200 bg-slate-50 text-xs font-bold rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition cursor-pointer"
+                    type="button"
                   >
                     Today
                   </button>
                   <button 
                     onClick={handleNextMonth}
-                    className="p-2 border border-zinc-800 bg-zinc-950/60 rounded-lg hover:border-amber-500/30 text-zinc-400 hover:text-white transition cursor-pointer"
+                    className="p-2 border border-slate-200 bg-slate-50 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition cursor-pointer"
+                    type="button"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -414,7 +434,7 @@ export default function CalendarDashboard() {
               </div>
 
               {/* Day Headers */}
-              <div className="grid grid-cols-7 gap-1 text-center font-semibold text-zinc-500 text-[10px] uppercase tracking-wider mb-2">
+              <div className="grid grid-cols-7 gap-1 text-center font-bold text-slate-400 text-[10px] uppercase tracking-wider mb-2">
                 <div>Sun</div>
                 <div>Mon</div>
                 <div>Tue</div>
@@ -433,35 +453,35 @@ export default function CalendarDashboard() {
                   const dayToday = isToday(date);
 
                   // Color mapping based on occupancy status
-                  let statusBorder = "border-zinc-800/40";
+                  let statusBorder = "border-slate-100";
                   let statusGlow = "";
                   let statusLabel = "";
-                  let dotColor = "bg-zinc-500";
+                  let dotColor = "bg-slate-400";
 
                   if (isCurrentMonth) {
                     if (dayStats.status === "Fully Blocked") {
-                      statusBorder = "border-red-950 bg-red-950/5 hover:bg-red-950/10";
-                      statusGlow = "shadow-[inset_0_0_8px_rgba(239,68,68,0.05)]";
-                      dotColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
+                      statusBorder = "border-red-200 bg-red-50 hover:bg-red-100/60";
+                      statusGlow = "shadow-[inset_0_0_8px_rgba(239,68,68,0.02)]";
+                      dotColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]";
                       statusLabel = "Blocked";
                     } else if (dayStats.status === "Sold Out") {
-                      statusBorder = "border-red-900 bg-red-950/5 hover:bg-red-950/10";
-                      statusGlow = "shadow-[inset_0_0_8px_rgba(239,68,68,0.05)]";
-                      dotColor = "bg-red-600 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
+                      statusBorder = "border-red-100 bg-red-50/50 hover:bg-red-100/60";
+                      statusGlow = "shadow-[inset_0_0_8px_rgba(239,68,68,0.02)]";
+                      dotColor = "bg-red-600 shadow-[0_0_8px_rgba(239,68,68,0.5)]";
                       statusLabel = "Sold Out";
                     } else if (dayStats.status === "Partially Booked") {
-                      statusBorder = "border-amber-800/60 bg-amber-950/5 hover:bg-amber-950/10";
-                      statusGlow = "shadow-[inset_0_0_8px_rgba(245,158,11,0.05)]";
-                      dotColor = "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]";
+                      statusBorder = "border-amber-200 bg-amber-50 hover:bg-amber-100/60";
+                      statusGlow = "shadow-[inset_0_0_8px_rgba(245,158,11,0.02)]";
+                      dotColor = "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
                       statusLabel = `${dayStats.totalBooked} Room${dayStats.totalBooked > 1 ? "s" : ""} Booked`;
                     } else {
-                      statusBorder = "border-zinc-800/80 bg-zinc-950/40 hover:bg-zinc-900/20";
-                      dotColor = "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]";
+                      statusBorder = "border-slate-100 bg-white hover:bg-slate-50/50";
+                      dotColor = "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
                       statusLabel = "All Available";
                     }
                   } else {
                     // Out-of-month padding
-                    statusBorder = "border-zinc-900/20 bg-zinc-950/10 opacity-25";
+                    statusBorder = "border-slate-100 bg-slate-50 opacity-30";
                   }
 
                   return (
@@ -469,24 +489,25 @@ export default function CalendarDashboard() {
                       key={idx}
                       onClick={() => isCurrentMonth && setSelectedDate(date)}
                       disabled={!isCurrentMonth}
-                      className={`relative min-h-[76px] flex flex-col items-start justify-between p-2.5 rounded-lg border text-left transition duration-200 outline-none ${
+                      className={`relative min-h-[76px] flex flex-col items-start justify-between p-2.5 rounded-xl border text-left transition duration-200 outline-none ${
                         isCurrentMonth ? "cursor-pointer" : "cursor-default"
                       } ${statusBorder} ${statusGlow} ${
                         daySelected 
-                          ? "!border-amber-500 ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(202,160,53,0.15)] bg-zinc-900/40" 
+                          ? "!border-blue-600 ring-2 ring-blue-100 bg-blue-50/10 shadow-sm" 
                           : ""
                       }`}
+                      type="button"
                     >
                       <div className="flex w-full justify-between items-center">
                         <span 
-                          className={`font-serif text-sm font-semibold ${
+                          className={`font-bold text-xs ${
                             daySelected 
-                              ? "text-amber-400" 
+                              ? "text-blue-600" 
                               : dayToday 
-                                ? "text-amber-500 border border-amber-500/40 rounded px-1.5 py-0.5 bg-amber-500/10 text-xs" 
+                                ? "text-blue-600 border border-blue-200 rounded-lg px-2 py-0.5 bg-blue-50 text-[10px]" 
                                 : isCurrentMonth 
-                                  ? "text-zinc-100" 
-                                  : "text-zinc-700"
+                                  ? "text-slate-800" 
+                                  : "text-slate-300"
                           }`}
                         >
                           {date.getDate()}
@@ -498,7 +519,7 @@ export default function CalendarDashboard() {
                       </div>
 
                       {isCurrentMonth && (
-                        <span className="text-[9px] text-zinc-500 font-medium truncate w-full mt-1.5 leading-none block">
+                        <span className="text-[9px] text-slate-400 font-bold truncate w-full mt-1.5 leading-none block uppercase tracking-wide">
                           {statusLabel}
                         </span>
                       )}
@@ -508,47 +529,58 @@ export default function CalendarDashboard() {
               </div>
 
               {/* Status Legend */}
-              <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-zinc-800/40 text-xs text-zinc-500">
+              <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                   <span>Fully Available</span>
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]"></span>
-                  <span>Partially Booked / Blocked</span>
+                  <span className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                  <span>Partially Booked</span>
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
-                  <span>Sold Out / Fully Blocked</span>
+                  <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
+                  <span>Sold Out / Blocked</span>
                 </span>
               </div>
 
               {/* Indian Festivals & Holidays Panel */}
-              <div className="mt-6 rounded-xl border border-amber-500/20 bg-zinc-950/40 p-4 space-y-3 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
-                <h3 className="text-xs uppercase tracking-wider font-semibold text-amber-500 flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-amber-500" />
+              <div className="mt-6 rounded-2xl border p-4 space-y-3" style={{ borderColor: "rgba(29,78,216,0.12)", background: "rgba(29,78,216,0.02)" }}>
+                <h3 className="text-xs uppercase tracking-wider font-bold flex items-center gap-2" style={{ color: "#1D4ED8" }}>
+                  <CalendarIcon className="h-4 w-4" />
                   <span>Indian Festivals & Holidays ({currentMonth.toLocaleString("default", { month: "long" })})</span>
                 </h3>
                 {(() => {
                   if (currentHolidays.length === 0) {
-                    return <p className="text-xs text-zinc-500 italic">No major holidays or festivals recorded for this month.</p>;
+                    return <p className="text-xs text-slate-400 italic">No major holidays or festivals recorded for this month.</p>;
                   }
                   return (
                     <div className="grid gap-3 sm:grid-cols-2">
                       {currentHolidays.map((holiday, idx) => (
-                        <div key={idx} className="flex items-center gap-3 rounded-lg border border-zinc-800/80 bg-zinc-900/20 px-3.5 py-2.5 hover:border-amber-500/20 transition-all duration-200">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-xs font-mono font-bold text-amber-400">
+                        <div 
+                          key={idx} 
+                          className="flex items-center gap-3 rounded-xl border bg-white px-3.5 py-2.5 transition-all duration-200"
+                          style={{ borderColor: "rgba(29,78,216,0.08)" }}
+                        >
+                          <div 
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-mono font-bold"
+                            style={{ borderColor: "rgba(29,78,216,0.2)", background: "rgba(29,78,216,0.06)", color: "#1D4ED8" }}
+                          >
                             {holiday.date}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-xs text-white truncate">{holiday.name}</p>
+                            <p className="font-bold text-xs text-slate-800 truncate">{holiday.name}</p>
                             <span className={`inline-block text-[9px] font-bold uppercase tracking-wider mt-0.5 ${
                               holiday.type === "Gazetted"
-                                ? "text-red-400"
+                                ? "text-red-600"
                                 : holiday.type === "Restricted"
-                                  ? "text-amber-400"
-                                  : "text-emerald-400"
-                            }`}>
+                                  ? "text-amber-600"
+                                  : "text-emerald-600"
+                            }`}
+                            style={{
+                              color: holiday.type === "Gazetted" ? "#DC2626" : holiday.type === "Restricted" ? "#D97706" : "#059669"
+                            }}
+                            >
                               {holiday.type}
                             </span>
                           </div>
@@ -564,12 +596,19 @@ export default function CalendarDashboard() {
 
           {/* Column 3: Live Selected Date Occupancy Panel */}
           <div className="space-y-6">
-            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-md p-6 space-y-6">
+            <div 
+              className="rounded-2xl p-6 space-y-6"
+              style={{ 
+                background: "white",
+                border: "1px solid rgba(29,78,216,0.1)",
+                boxShadow: "0 4px 20px rgba(13,27,74,0.06)"
+              }}
+            >
               
               {/* Card Header displaying Date */}
-              <div className="border-b border-zinc-800/60 pb-4">
-                <h3 className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Live Occupancy</h3>
-                <h2 className="text-lg font-serif text-white font-medium mt-1">
+              <div className="border-b pb-4" style={{ borderColor: "#F1F5F9" }}>
+                <h3 className="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Live Occupancy</h3>
+                <h2 className="text-lg font-bold text-slate-800 mt-1" style={{ fontFamily: "Georgia, serif" }}>
                   {selectedDate.toLocaleDateString("en-US", { 
                     weekday: "long", 
                     month: "long", 
@@ -580,15 +619,26 @@ export default function CalendarDashboard() {
               </div>
 
               {/* Day overall status banner */}
-              <div className={`rounded-lg border p-3.5 flex items-center gap-3 ${
-                selectedDateStats.status === "Fully Blocked"
-                  ? "bg-red-500/10 border-red-500/20 text-red-400"
-                  : selectedDateStats.status === "Sold Out"
-                    ? "bg-red-500/10 border-red-500/20 text-red-400"
+              <div 
+                className="rounded-xl border p-3.5 flex items-center gap-3 text-xs"
+                style={{ 
+                  borderColor: selectedDateStats.status === "Fully Blocked" || selectedDateStats.status === "Sold Out"
+                    ? "rgba(220,38,38,0.2)"
                     : selectedDateStats.status === "Partially Booked"
-                      ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                      : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-              }`}>
+                      ? "rgba(217,119,6,0.2)"
+                      : "rgba(5,150,105,0.2)",
+                  background: selectedDateStats.status === "Fully Blocked" || selectedDateStats.status === "Sold Out"
+                    ? "rgba(220,38,38,0.05)"
+                    : selectedDateStats.status === "Partially Booked"
+                      ? "rgba(217,119,6,0.05)"
+                      : "rgba(5,150,105,0.05)",
+                  color: selectedDateStats.status === "Fully Blocked" || selectedDateStats.status === "Sold Out"
+                    ? "#DC2626"
+                    : selectedDateStats.status === "Partially Booked"
+                      ? "#D97706"
+                      : "#059669"
+                }}
+              >
                 {selectedDateStats.status === "Fully Blocked" ? (
                   <Lock className="h-5 w-5 shrink-0" />
                 ) : selectedDateStats.status === "Sold Out" ? (
@@ -599,8 +649,8 @@ export default function CalendarDashboard() {
                   <CheckCircle2 className="h-5 w-5 shrink-0" />
                 )}
                 <div>
-                  <p className="font-semibold text-xs uppercase tracking-wider">{selectedDateStats.status}</p>
-                  <p className="text-[11px] opacity-75 mt-0.5">
+                  <p className="font-bold uppercase tracking-wider text-[10px]">{selectedDateStats.status}</p>
+                  <p className="text-[11px] opacity-90 mt-0.5">
                     {selectedDateStats.status === "Fully Blocked"
                       ? "The entire hotel is blocked for public bookings."
                       : selectedDateStats.status === "Sold Out"
@@ -614,27 +664,42 @@ export default function CalendarDashboard() {
 
               {/* Rooms availability progress grids */}
               <div className="space-y-4">
-                <h4 className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Room Allocation Breakdowns</h4>
+                <h4 className="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Room Allocation Breakdowns</h4>
                 
                 {selectedDateStats.rooms.map((room) => {
                   const percent = Math.min(100, Math.round((room.bookedCount / room.totalCapacity) * 100));
                   
                   return (
-                    <div key={room.roomType} className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-2">
+                    <div 
+                      key={room.roomType} 
+                      className="rounded-xl border p-3 space-y-2"
+                      style={{ borderColor: "#F1F5F9", background: "#FAFBFF" }}
+                    >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                          <Layers className="h-3.5 w-3.5 text-amber-500" />
-                          <span className="font-semibold text-white text-xs">{room.roomType} Room</span>
+                          <Layers className="h-3.5 w-3.5 text-slate-400" />
+                          <span className="font-bold text-slate-800 text-xs">{room.roomType} Room</span>
                         </div>
-                        <span className={`text-[10px] rounded-full border px-2 py-0.5 font-bold uppercase ${
-                          room.isBlocked
-                            ? "bg-red-500/10 text-red-400 border-red-500/20"
-                            : room.availableCount === 0
-                              ? "bg-red-500/10 text-red-400 border-red-500/20"
+                        <span 
+                          className="text-[9px] rounded-full border px-2 py-0.5 font-bold uppercase tracking-wide"
+                          style={{
+                            borderColor: room.isBlocked || room.availableCount === 0
+                              ? "rgba(220,38,38,0.2)"
                               : room.bookedCount > 0
-                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                        }`}>
+                                ? "rgba(217,119,6,0.2)"
+                                : "rgba(5,150,105,0.2)",
+                            background: room.isBlocked || room.availableCount === 0
+                              ? "rgba(220,38,38,0.06)"
+                              : room.bookedCount > 0
+                                ? "rgba(217,119,6,0.06)"
+                                : "rgba(5,150,105,0.06)",
+                            color: room.isBlocked || room.availableCount === 0
+                              ? "#DC2626"
+                              : room.bookedCount > 0
+                                ? "#D97706"
+                                : "#059669"
+                          }}
+                        >
                           {room.isBlocked 
                             ? "Blocked" 
                             : room.availableCount === 0 
@@ -644,7 +709,7 @@ export default function CalendarDashboard() {
                       </div>
 
                       {/* Info lines */}
-                      <div className="flex justify-between text-[11px] text-zinc-400">
+                      <div className="flex justify-between text-[11px] text-slate-500 font-medium">
                         <span>Booked: {room.bookedCount} / {room.totalCapacity} unit{room.totalCapacity > 1 ? "s" : ""}</span>
                         {!room.isBlocked && (
                           <span>
@@ -655,23 +720,27 @@ export default function CalendarDashboard() {
                       </div>
 
                       {/* Progress Bar */}
-                      <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                         <div 
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            room.isBlocked 
-                              ? "w-full bg-red-600" 
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${room.isBlocked ? 100 : percent}%`,
+                            background: room.isBlocked 
+                              ? "#DC2626" 
                               : percent >= 100 
-                                ? "bg-red-500" 
+                                ? "#DC2626" 
                                 : percent > 0 
-                                  ? "bg-amber-500" 
-                                  : "bg-emerald-500"
-                          }`}
-                          style={{ width: `${room.isBlocked ? 100 : percent}%` }}
+                                  ? "#D97706" 
+                                  : "#059669"
+                          }}
                         ></div>
                       </div>
 
                       {room.isBlocked && (
-                        <div className="text-[10px] text-red-400 bg-red-500/5 border border-red-500/10 rounded p-1.5 italic">
+                        <div 
+                          className="text-[10px] border rounded p-1.5 italic"
+                          style={{ borderColor: "rgba(220,38,38,0.15)", background: "rgba(220,38,38,0.03)", color: "#DC2626" }}
+                        >
                           Block Reason: {room.blockReason}
                         </div>
                       )}
@@ -682,33 +751,44 @@ export default function CalendarDashboard() {
 
               {/* Active Bookings List */}
               <div className="space-y-3 pt-2">
-                <h4 className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Active Bookings Today</h4>
+                <h4 className="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Active Bookings Today</h4>
                 {selectedDateStats.bookings.length === 0 ? (
-                  <div className="text-center py-4 rounded-lg border border-dashed border-zinc-800 text-zinc-500 text-xs flex items-center justify-center gap-2">
-                    <DoorOpen className="h-4 w-4" />
+                  <div className="text-center py-6 rounded-xl border border-dashed border-slate-200 text-slate-400 text-xs flex items-center justify-center gap-2 bg-slate-50/50">
+                    <DoorOpen className="h-4 w-4 text-slate-300" />
                     <span>No check-ins hosted today.</span>
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
                     {selectedDateStats.bookings.map((b) => (
-                      <div key={b._id} className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 space-y-2 text-xs">
+                      <div 
+                        key={b.id || b._id} 
+                        className="rounded-xl border p-3 space-y-2 text-xs"
+                        style={{ borderColor: "#F1F5F9", background: "#FAFBFF" }}
+                      >
                         <div className="flex justify-between items-start">
                           <div>
-                            <span className="font-semibold text-white text-xs">{b.guestName}</span>
-                            <span className="block text-[9px] font-mono text-amber-500 mt-0.5">{b.bookingId}</span>
+                            <span className="font-bold text-slate-800 text-xs">{b.guestName}</span>
+                            <span className="block text-[9px] font-mono font-bold mt-0.5" style={{ color: "#DC2626" }}>{b.bookingId}</span>
                           </div>
-                          <span className="rounded bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 text-[9px] text-emerald-400 font-semibold font-mono uppercase">
+                          <span 
+                            className="rounded px-1.5 py-0.5 text-[9px] font-bold font-mono uppercase tracking-wide border"
+                            style={{
+                              borderColor: b.paymentStatus === "Paid" ? "rgba(5,150,105,0.2)" : "rgba(217,119,6,0.2)",
+                              background: b.paymentStatus === "Paid" ? "rgba(5,150,105,0.05)" : "rgba(217,119,6,0.05)",
+                              color: b.paymentStatus === "Paid" ? "#059669" : "#D97706"
+                            }}
+                          >
                             {b.paymentStatus}
                           </span>
                         </div>
 
-                        <div className="space-y-1 text-zinc-400 text-[11px]">
+                        <div className="space-y-1 text-slate-500 text-[11px] font-medium">
                           <div className="flex items-center gap-1.5">
-                            <User className="h-3 w-3 text-zinc-500" />
+                            <User className="h-3 w-3 text-slate-400" />
                             <span>Room Config: {b.roomType}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Phone className="h-3 w-3 text-zinc-500" />
+                            <Phone className="h-3 w-3 text-slate-400" />
                             <span>Phone: {b.phone}</span>
                           </div>
                         </div>
@@ -721,17 +801,21 @@ export default function CalendarDashboard() {
               {/* Active Blocks List */}
               {selectedDateStats.blocks.length > 0 && (
                 <div className="space-y-3 pt-2">
-                  <h4 className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Active Date Blocks Today</h4>
+                  <h4 className="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Active Date Blocks Today</h4>
                   <div className="space-y-2">
                     {selectedDateStats.blocks.map((block) => (
-                      <div key={block._id} className="rounded-lg border border-red-500/20 bg-red-950/5 p-3 space-y-1.5 text-xs text-red-400">
+                      <div 
+                        key={block.id || block._id} 
+                        className="rounded-xl border p-3 space-y-1.5 text-xs"
+                        style={{ borderColor: "rgba(220,38,38,0.2)", background: "rgba(220,38,38,0.05)", color: "#DC2626" }}
+                      >
                         <div className="flex items-center justify-between">
                           <span className="font-bold uppercase tracking-wider text-[9px]">
                             {block.roomType === "All" ? "Entire Hotel Block" : `${block.roomType} Room Block`}
                           </span>
                           <CalendarOff className="h-3.5 w-3.5" />
                         </div>
-                        <p className="text-[11px] italic opacity-85">{block.reason || "No block note specified"}</p>
+                        <p className="text-[11px] italic opacity-90">{block.reason || "No block note specified"}</p>
                       </div>
                     ))}
                   </div>

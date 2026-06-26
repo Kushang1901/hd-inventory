@@ -120,14 +120,26 @@ export default function BookingsManagement() {
       if (element) {
         const html2pdf = (window as any).html2pdf;
         if (html2pdf) {
+          // Clone the element and render it off-screen to avoid blank page scroll offsets
+          const clone = element.cloneNode(true) as HTMLElement;
+          clone.style.position = "absolute";
+          clone.style.left = "-9999px";
+          clone.style.top = "0";
+          clone.style.width = "800px";
+          clone.style.background = "#ffffff";
+          clone.style.color = "#000000";
+          document.body.appendChild(clone);
+
           const opt = {
             margin: [0.4, 0.4, 0.4, 0.4],
             filename: `Hotel_Devang_Provisional_Bill_${selectedBooking.bookingId}.pdf`,
             image: { type: "jpeg", quality: 0.98 },
-            html2canvas: { scale: 2.5, useCORS: true },
+            html2canvas: { scale: 2.5, useCORS: true, scrollY: 0, scrollX: 0 },
             jsPDF: { unit: "in", format: "a4", orientation: "portrait" }
           };
-          html2pdf().from(element).set(opt).save();
+          html2pdf().from(clone).set(opt).save().then(() => {
+            document.body.removeChild(clone);
+          });
         }
       }
     };

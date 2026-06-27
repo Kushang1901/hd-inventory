@@ -251,7 +251,7 @@ export async function POST(request: Request) {
       };
     }));
 
-    const gstAmount = Math.round(calculatedTotal * 0.05);
+    const gstAmount = Math.ceil(calculatedTotal * 0.05);
     const totalWithGst = calculatedTotal + gstAmount;
     const advancePaid = Math.round(totalWithGst * 0.5);
     const balanceDue = totalWithGst - advancePaid;

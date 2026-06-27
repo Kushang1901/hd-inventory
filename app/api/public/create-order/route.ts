@@ -226,8 +226,10 @@ export async function POST(request: Request) {
       computedTotalAmount += roomTotalRate * quantity;
     }
 
-    // Generate Razorpay Order for the 50% advance booking payment
-    const advanceAmount = Math.round(computedTotalAmount * 0.5); // in INR
+    // Generate Razorpay Order for the 50% advance booking payment (including 5% GST)
+    const gstAmount = Math.round(computedTotalAmount * 0.05);
+    const totalWithGst = computedTotalAmount + gstAmount;
+    const advanceAmount = Math.round(totalWithGst * 0.5); // in INR
     
     const razorpayOptions = {
       amount: advanceAmount * 100, // in paise
@@ -236,7 +238,7 @@ export async function POST(request: Request) {
       notes: {
         checkIn: checkInStr,
         checkOut: checkOutStr,
-        totalAmount: computedTotalAmount
+        totalAmount: totalWithGst
       }
     };
 
@@ -248,7 +250,7 @@ export async function POST(request: Request) {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      totalBookingAmount: computedTotalAmount
+      totalBookingAmount: totalWithGst
     }));
 
   } catch (err: any) {

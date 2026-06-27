@@ -251,8 +251,10 @@ export async function POST(request: Request) {
       };
     }));
 
-    const advancePaid = Math.round(calculatedTotal * 0.5);
-    const balanceDue = calculatedTotal - advancePaid;
+    const gstAmount = Math.round(calculatedTotal * 0.05);
+    const totalWithGst = calculatedTotal + gstAmount;
+    const advancePaid = Math.round(totalWithGst * 0.5);
+    const balanceDue = totalWithGst - advancePaid;
 
     // Generate Booking ID: HD-YYYYMMDD-[3 RANDOM DIGITS]
     const dateStr = checkIn.toISOString().split("T")[0].replace(/-/g, "");
@@ -274,7 +276,7 @@ export async function POST(request: Request) {
         rooms: roomDetailsForSave,
         roomType: mainRoomType,
         selectedSubtype: mainSubtype,
-        totalAmount: calculatedTotal,
+        totalAmount: totalWithGst,
         paidAmount: advancePaid,
         dueAmount: balanceDue,
         paymentStatus: "Advance Paid",

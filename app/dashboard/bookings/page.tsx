@@ -572,26 +572,44 @@ export default function BookingsManagement() {
                   </div>
 
                   {/* Totals panel */}
-                  <div className="border-t border-zinc-200 pt-4 space-y-1.5 text-[10px] text-zinc-900">
-                    <div className="flex justify-between font-semibold">
-                      <span>Total Staying Charges:</span>
-                      <span>₹{selectedBooking.totalAmount}</span>
-                    </div>
-                    <div className="flex justify-between text-emerald-700">
-                      <span>Advance Received Online (Razorpay):</span>
-                      <span className="font-semibold">- ₹{selectedBooking.paidAmount}</span>
-                    </div>
-                    
-                    <div className="border-t border-double border-red-900/30 pt-2.5 flex justify-between text-xs font-bold text-red-950 font-serif" style={{ color: "#880000" }}>
-                      <span>BALANCE DUE AT CHECK-IN:</span>
-                      <span>₹{selectedBooking.dueAmount}</span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const nights = getNights(selectedBooking.checkIn, selectedBooking.checkOut);
+                    const calculatedSubtotal = selectedBooking.rooms && selectedBooking.rooms.length > 0
+                      ? selectedBooking.rooms.reduce((acc: number, room: any) => acc + (room.pricePerNight * room.quantity * nights), 0)
+                      : Math.round(selectedBooking.totalAmount / 1.05);
+                    const calculatedGst = Math.round(calculatedSubtotal * 0.05);
+
+                    return (
+                      <div className="border-t border-zinc-200 pt-4 space-y-1.5 text-[10px] text-zinc-900">
+                        <div className="flex justify-between">
+                          <span>Room Tariff Subtotal:</span>
+                          <span>₹{calculatedSubtotal}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-zinc-100 pb-1.5">
+                          <span>Mandatory GST (5%):</span>
+                          <span>₹{calculatedGst}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold">
+                          <span>Total Staying Charges (incl. GST):</span>
+                          <span>₹{selectedBooking.totalAmount}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Advance Received Online (Razorpay):</span>
+                          <span className="font-semibold">- ₹{selectedBooking.paidAmount}</span>
+                        </div>
+                        
+                        <div className="border-t border-double border-red-900/30 pt-2.5 flex justify-between text-xs font-bold text-red-950 font-serif" style={{ color: "#880000" }}>
+                          <span>BALANCE DUE AT CHECK-IN:</span>
+                          <span>₹{selectedBooking.dueAmount}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Confirmation Stamp & Stamp visual */}
                   <div className="pt-6 border-t border-zinc-100 flex items-center justify-between gap-4">
                     <div className="text-[9px] text-zinc-400 font-sans max-w-[160px] leading-relaxed">
-                      * This is a dynamic provisional booking confirmation. Bring this document at check-in.
+                      * GST is compulsory for room booking purposes. This is a dynamic provisional booking confirmation. Bring this document at check-in.
                     </div>
                     
                     {/* Stamp */}

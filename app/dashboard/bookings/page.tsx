@@ -577,7 +577,7 @@ export default function BookingsManagement() {
                     const calculatedSubtotal = selectedBooking.rooms && selectedBooking.rooms.length > 0
                       ? selectedBooking.rooms.reduce((acc: number, room: any) => acc + (room.pricePerNight * room.quantity * nights), 0)
                       : Math.round(selectedBooking.totalAmount / 1.05);
-                    const calculatedGst = Math.round(calculatedSubtotal * 0.05);
+                    const calculatedGst = Math.ceil(calculatedSubtotal * 0.05);
 
                     return (
                       <div className="border-t border-zinc-200 pt-4 space-y-1.5 text-[10px] text-zinc-900">

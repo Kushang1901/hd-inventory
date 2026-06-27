@@ -227,7 +227,7 @@ export async function POST(request: Request) {
     }
 
     // Generate Razorpay Order for the 50% advance booking payment (including 5% GST)
-    const gstAmount = Math.round(computedTotalAmount * 0.05);
+    const gstAmount = Math.ceil(computedTotalAmount * 0.05);
     const totalWithGst = computedTotalAmount + gstAmount;
     const advanceAmount = Math.round(totalWithGst * 0.5); // in INR
     

@@ -34,18 +34,50 @@ export async function GET(request: Request) {
 
     // Scenario 1: Fetch payments for a specific settlement ID
     if (settlementId) {
+      // 1. Fetch settlement details first to get its created_at timestamp and status
+      const settlementRes = await fetch(
+        `https://api.razorpay.com/v1/settlements/${settlementId}`,
+        { headers: { Authorization: authHeader } }
+      );
+
+      if (!settlementRes.ok) {
+        const errorText = await settlementRes.text();
+        throw new Error(`Razorpay Settlement API Error: ${errorText}`);
+      }
+
+      const settlement = await settlementRes.json();
+      const settlementCreatedAt = settlement.created_at;
+      const isProcessed = settlement.status === "processed";
+
+      // 2. Fetch payments within a 30-day window ending 1 day after settlement creation
+      const fromTime = settlementCreatedAt - 30 * 24 * 60 * 60; // 30 days before
+      const toTime = settlementCreatedAt + 1 * 24 * 60 * 60;    // 1 day after
+
       const paymentsRes = await fetch(
-        `https://api.razorpay.com/v1/payments?settlement_id=${settlementId}&count=100`,
+        `https://api.razorpay.com/v1/payments?from=${fromTime}&to=${toTime}&count=100`,
         { headers: { Authorization: authHeader } }
       );
 
       if (!paymentsRes.ok) {
         const errorText = await paymentsRes.text();
-        throw new Error(`Razorpay API Error: ${errorText}`);
+        throw new Error(`Razorpay Payments API Error: ${errorText}`);
       }
 
       const paymentsData = await paymentsRes.json();
       const payments = paymentsData.items || [];
+
+      // 3. Filter payments:
+      // - Match directly if pay.settlement_id === settlementId
+      // - Or, if the settlement is not processed, match captured payments with no settlement_id created before/at the settlement time
+      const matchedPayments = payments.filter((pay: any) => {
+        if (pay.settlement_id === settlementId) {
+          return true;
+        }
+        if (!isProcessed && (!pay.settlement_id || pay.settlement_id === null || pay.settlement_id === undefined)) {
+          return pay.status === "captured" && pay.created_at <= settlementCreatedAt;
+        }
+        return false;
+      });
 
       // Connect to DB and map bookings
       await connectToDatabase();
@@ -70,7 +102,7 @@ export async function GET(request: Request) {
         }
       });
 
-      const mappedPayments = payments.map((pay: any) => {
+      const mappedPayments = matchedPayments.map((pay: any) => {
         const booking = bookings.find(
           (b) => b.razorpayPaymentId === pay.id || b.razorpayOrderId === pay.order_id
         );

@@ -463,7 +463,7 @@ export default function DashboardLayout({
             MAIN CONTENT AREA
             ══════════════════════════════════════════ */}
         <main 
-          className="flex-1 overflow-y-auto relative"
+          className="flex-1 overflow-y-auto relative flex flex-col"
           style={{ 
             background: "linear-gradient(180deg, #FAFBFF 0%, #F1F5F9 100%)",
             padding: "clamp(1rem, 3vw, 2rem)"
@@ -475,7 +475,22 @@ export default function DashboardLayout({
             style={{ background: "linear-gradient(90deg, #DC2626, #1D4ED8, #DC2626)" }}
           />
 
-          {children}
+          <div className="flex-1">
+            {children}
+          </div>
+
+          {/* Common Dashboard Footer */}
+          <footer className="mt-auto pt-8 pb-4 text-center text-xs text-slate-400 no-print">
+            Designed, Developed & Maintained by{" "}
+            <a 
+              href="https://kushangacharya.vercel.app" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-semibold text-[#1E3A8A] hover:text-[#DC2626] transition-colors duration-200 underline decoration-slate-300 hover:decoration-[#DC2626] underline-offset-4"
+            >
+              Kushang Acharya
+            </a>
+          </footer>
 
           {/* FRIDAY tooltip */}
           {showTooltip && (

@@ -635,123 +635,185 @@ export default function SettlementsPage() {
       {selectedSettlement && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
           <div 
-            className="relative w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] border"
-            style={{ borderColor: "rgba(29,78,216,0.15)" }}
+            className="relative w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] border animate-scaleUp"
+            style={{ 
+              borderColor: "rgba(29,78,216,0.12)"
+            }}
           >
             {/* Modal Header */}
             <div 
-              className="px-6 py-4 flex items-center justify-between text-white"
-              style={{ background: "linear-gradient(135deg, #0D1B4A 0%, #1E3A8A 100%)" }}
+              className="px-6 py-5 flex items-center justify-between text-white relative"
+              style={{ 
+                background: "linear-gradient(135deg, #0D1B4A 0%, #132254 50%, #1E3A8A 100%)",
+                borderBottom: "3px solid #DC2626"
+              }}
             >
               <div>
-                <h3 className="text-base font-bold font-serif flex items-center gap-2">
-                  <Landmark className="h-4.5 w-4.5 text-blue-200" />
-                  Settlement Details: {selectedSettlement.id}
+                <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: "Georgia, serif" }}>
+                  <Landmark className="h-5 w-5 text-blue-300" />
+                  Settlement Details: <span className="font-mono text-blue-200 text-sm select-all">{selectedSettlement.id}</span>
                 </h3>
-                <p className="text-xs text-blue-100 mt-0.5">
+                <p className="text-xs text-blue-100/80 mt-1 flex items-center gap-1.5 font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                   Processed on {formatTimestamp(selectedSettlement.created_at)}
                 </p>
               </div>
               <button 
                 onClick={() => setSelectedSettlement(null)}
-                className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer outline-none"
+                className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer outline-none hover:scale-105 active:scale-95"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+            <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-slate-50/50">
               
-              {/* Quick Batch Summary */}
-              <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Bank UTR Reference</span>
-                  <span className="font-mono text-sm font-bold text-slate-800">{selectedSettlement.utr || "Pending"}</span>
+              {/* Quick Batch Summary Cards */}
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                
+                {/* UTR Reference Card */}
+                <div className="bg-white p-4.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bank UTR Reference</span>
+                    <div className="p-1.5 bg-slate-50 rounded-lg text-slate-400">
+                      <Info className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div>
+                    {selectedSettlement.utr ? (
+                      <span className="font-mono text-sm font-bold text-slate-800 break-all select-all">{selectedSettlement.utr}</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 border border-amber-100 animate-pulse">
+                        <Clock className="h-3 w-3" /> Pending Payout
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Gross Settled</span>
-                  <span className="text-sm font-bold text-slate-800">
-                    ₹{(selectedSettlement.amount + selectedSettlement.fees + selectedSettlement.tax).toFixed(2)}
-                  </span>
+
+                {/* Gross Settled Card */}
+                <div className="bg-white p-4.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gross Settled</span>
+                    <div className="p-1.5 bg-blue-50 rounded-lg text-blue-500">
+                      <IndianRupee className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-bold text-slate-800">
+                    ₹{(selectedSettlement.amount + selectedSettlement.fees + selectedSettlement.tax).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Fees & GST Deductions</span>
-                  <span className="text-sm font-bold text-rose-600">
-                    -₹{(selectedSettlement.fees + selectedSettlement.tax).toFixed(2)}
-                  </span>
+
+                {/* Fees & Deductions Card */}
+                <div className="bg-white p-4.5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fees & GST</span>
+                    <div className="p-1.5 bg-rose-50 rounded-lg text-rose-500">
+                      <AlertCircle className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-bold text-rose-600">
+                    -₹{(selectedSettlement.fees + selectedSettlement.tax).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </div>
                 </div>
-                <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-1">Credited To Bank</span>
-                  <span className="text-base font-bold text-emerald-700">₹{selectedSettlement.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+
+                {/* Net Credited Card */}
+                <div className="bg-emerald-50/30 p-4.5 rounded-xl border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full translate-x-8 -translate-y-8" />
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Credited to Bank</span>
+                    <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-black text-emerald-700">
+                    ₹{selectedSettlement.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </div>
                 </div>
               </div>
 
               {/* Transactions List */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider">
-                  Payments Included In This Payout
-                </h4>
+              <div className="space-y-3 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-[#1E3A8A]" />
+                    Payments Included In This Payout
+                  </h4>
+                  <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md">
+                    {settlementPayments.length} {settlementPayments.length === 1 ? 'Transaction' : 'Transactions'}
+                  </span>
+                </div>
 
                 {loadingDetails ? (
                   <div className="py-12 flex flex-col items-center justify-center">
-                    <div className="relative mb-3 h-8 w-8">
-                      <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-600 animate-spin" />
+                    <div className="relative mb-3 h-10 w-10">
+                      <div className="absolute inset-0 rounded-full border-3 border-slate-200" />
+                      <div className="absolute inset-0 rounded-full border-3 border-transparent border-t-blue-600 animate-spin" />
                     </div>
-                    <span className="text-xs text-slate-400">Loading payouts detail breakdown...</span>
+                    <span className="text-xs font-semibold text-slate-500">Loading payout details breakdown...</span>
                   </div>
                 ) : detailsError ? (
-                  <div className="py-8 text-center text-rose-500 text-sm">
+                  <div className="py-8 text-center text-rose-600 text-xs font-semibold bg-rose-50 rounded-xl border border-rose-100 flex items-center justify-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
                     {detailsError}
                   </div>
                 ) : settlementPayments.length === 0 ? (
-                  <div className="py-8 text-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed">
+                  <div className="py-10 text-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
                     No transactions captured under this settlement. This could be due to a settlement delay or manual settlement adjustment in Razorpay.
                   </div>
                 ) : (
-                  <div className="border border-slate-100 rounded-xl overflow-hidden">
-                    <table className="w-full border-collapse text-left text-xs bg-white">
-                      <thead>
-                        <tr className="border-b border-slate-100 bg-slate-50 font-bold uppercase text-slate-400">
-                          <th className="py-2.5 px-4">Payment ID</th>
-                          <th className="py-2.5 px-4">Guest / Booking ID</th>
-                          <th className="py-2.5 px-4">Date/Time</th>
-                          <th className="py-2.5 px-4">Method</th>
-                          <th className="py-2.5 px-4 text-right">Amount (Gross)</th>
-                          <th className="py-2.5 px-4 text-right">Settled Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {settlementPayments.map((pay) => (
-                          <tr key={pay.id} className="hover:bg-slate-50/20">
-                            <td className="py-3 px-4 font-mono text-slate-500">{pay.id}</td>
-                            <td className="py-3 px-4">
-                              {pay.booking ? (
-                                <div className="space-y-0.5">
-                                  <div className="font-bold text-slate-700">{pay.booking.guestName}</div>
-                                  <div className="text-[9px] font-mono text-slate-400">{pay.booking.bookingId}</div>
-                                </div>
-                              ) : (
-                                <div className="space-y-0.5">
-                                  <span className="text-slate-400 italic">External Payment</span>
-                                  <div className="text-[9px] text-slate-400 truncate max-w-[150px]">{pay.email}</div>
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
-                              {formatTimestamp(pay.created_at)}
-                            </td>
-                            <td className="py-3 px-4 text-slate-500 uppercase">{pay.method}</td>
-                            <td className="py-3 px-4 text-right font-bold text-slate-700">₹{pay.amount.toFixed(2)}</td>
-                            <td className="py-3 px-4 text-right">
-                              <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-[9px] font-bold uppercase text-emerald-600 border border-emerald-100">
-                                Settled
-                              </span>
-                            </td>
+                  <div className="border border-slate-100 rounded-xl overflow-hidden shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-left text-xs bg-white">
+                        <thead>
+                          <tr className="border-b border-slate-100 bg-slate-50 font-bold uppercase text-slate-400 text-[10px] tracking-wider">
+                            <th className="py-3 px-4">Payment ID</th>
+                            <th className="py-3 px-4">Guest / Booking ID</th>
+                            <th className="py-3 px-4">Date/Time</th>
+                            <th className="py-3 px-4">Method</th>
+                            <th className="py-3 px-4 text-right">Amount (Gross)</th>
+                            <th className="py-3 px-4 text-right">Settled Status</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {settlementPayments.map((pay) => (
+                            <tr key={pay.id} className="hover:bg-slate-50/30 transition-colors">
+                              <td className="py-3 px-4 font-mono text-slate-500 select-all font-semibold">{pay.id}</td>
+                              <td className="py-3 px-4">
+                                {pay.booking ? (
+                                  <div className="space-y-0.5">
+                                    <div className="font-bold text-slate-800">{pay.booking.guestName}</div>
+                                    <div className="text-[9px] font-mono text-slate-400 font-semibold">{pay.booking.bookingId}</div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-0.5">
+                                    <span className="text-slate-400 italic font-medium">External / Deposit</span>
+                                    <div className="text-[9px] text-slate-400 font-mono truncate max-w-[150px]">{pay.email}</div>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-slate-500 font-medium whitespace-nowrap">
+                                {formatTimestamp(pay.created_at)}
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 uppercase tracking-wide">
+                                  {pay.method}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-right font-black text-slate-800">
+                                ₹{pay.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[9px] font-bold uppercase text-emerald-600 border border-emerald-100">
+                                  <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                                  Settled
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>
@@ -759,14 +821,14 @@ export default function SettlementsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs">
-              <span className="flex items-center gap-1 text-slate-400">
-                <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-3 justify-between items-center text-xs">
+              <span className="flex items-center gap-1.5 text-slate-400 font-medium text-center sm:text-left">
+                <HelpCircle className="h-4 w-4 text-slate-400 shrink-0" />
                 These transactions represent payments collected via online booking pre-payments.
               </span>
               <button 
                 onClick={() => setSelectedSettlement(null)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl transition-all cursor-pointer"
+                className="w-full sm:w-auto bg-[#1E3A8A] hover:bg-[#132254] text-white font-bold px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-md shadow-blue-900/10 active:scale-95 text-center"
               >
                 Close
               </button>

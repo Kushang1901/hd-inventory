@@ -154,7 +154,48 @@ export async function GET(request: Request) {
     const paymentsData = await paymentsRes.json();
     const payments = paymentsData.items || [];
 
-    // 3. Connect DB and fetch bookings
+    // 3. Build a paymentId -> settlementId map using Razorpay's Settlement Recon API.
+    //    Razorpay can delay updating settlement_id on individual payments by 24-72 hrs
+    //    even after the money has been transferred. The recon API is always up-to-date.
+    const paymentToSettlementMap: Record<string, string> = {};
+
+    const processedSettlementsForRecon = settlements.filter((s: any) => s.status === "processed");
+
+    // Collect unique dates (UTC) for processed settlements to avoid duplicate recon calls
+    const uniqueReconDates = new Set<string>();
+    for (const settle of processedSettlementsForRecon) {
+      const d = new Date(settle.created_at * 1000);
+      // Key: YYYY-MM-DD in UTC
+      uniqueReconDates.add(
+        `${d.getUTCFullYear()}-${d.getUTCMonth() + 1}-${d.getUTCDate()}`
+      );
+    }
+
+    // Fetch recon data for each unique date and build the map
+    await Promise.allSettled(
+      Array.from(uniqueReconDates).map(async (dateKey) => {
+        const [year, month, day] = dateKey.split("-");
+        try {
+          const reconRes = await fetch(
+            `https://api.razorpay.com/v1/settlements/recon/combined?year=${year}&month=${month}&day=${day}&count=100`,
+            { headers: { Authorization: authHeader } }
+          );
+          if (!reconRes.ok) return; // skip silently if recon fails for this date
+          const reconData = await reconRes.json();
+          const reconItems: any[] = reconData.items || [];
+          for (const item of reconItems) {
+            // entity_id is the payment ID; settlement_id is the batch it belongs to
+            if (item.entity_id && item.settlement_id) {
+              paymentToSettlementMap[item.entity_id] = item.settlement_id;
+            }
+          }
+        } catch {
+          // silently skip recon errors — we'll fall back to raw payment data
+        }
+      })
+    );
+
+    // 4. Connect DB and fetch bookings
     await connectToDatabase();
     const bookings = await prisma.booking.findMany({
       where: {
@@ -177,11 +218,17 @@ export async function GET(request: Request) {
       }
     });
 
-    // 4. Map payments to DB bookings
+    // 5. Map payments to DB bookings.
+    //    Use the recon-derived settlement_id as a fallback when Razorpay API
+    //    hasn't yet populated settlement_id directly on the payment object.
     const mappedPayments = payments.map((pay: any) => {
       const booking = bookings.find(
         (b) => b.razorpayPaymentId === pay.id || b.razorpayOrderId === pay.order_id
       );
+      // Prefer live settlement_id from payment; fall back to recon map
+      const effectiveSettlementId: string | null =
+        pay.settlement_id || paymentToSettlementMap[pay.id] || null;
+
       return {
         id: pay.id,
         amount: pay.amount / 100, // paise to INR
@@ -192,7 +239,7 @@ export async function GET(request: Request) {
         email: pay.email,
         contact: pay.contact,
         created_at: pay.created_at,
-        settlement_id: pay.settlement_id,
+        settlement_id: effectiveSettlementId,
         booking: booking ? {
           bookingId: booking.bookingId,
           guestName: booking.guestName,
@@ -205,7 +252,7 @@ export async function GET(request: Request) {
       };
     });
 
-    // 5. Calculate statistics
+    // 6. Calculate statistics (using effective settlement_id — recon-enriched)
     const capturedPayments = mappedPayments.filter((p: any) => p.status === "captured");
     const totalOnlineRevenue = capturedPayments.reduce((acc: number, p: any) => acc + p.amount, 0);
 
@@ -221,6 +268,7 @@ export async function GET(request: Request) {
     // Net received is the sum of payouts that went into the bank
     const netReceivedInBank = totalPayoutsFromSettlements;
 
+    // Truly pending = captured payments with no settlement link even after recon cross-check
     const pendingPayments = capturedPayments.filter((p: any) => p.settlement_id === null);
     const pendingSettlementAmount = pendingPayments.reduce((acc: number, p: any) => acc + p.amount, 0);
 

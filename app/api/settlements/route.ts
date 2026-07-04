@@ -32,9 +32,9 @@ export async function GET(request: Request) {
 
     const authHeader = 'Basic ' + Buffer.from(`${keyId}:${keySecret}`).toString('base64');
 
-    // Scenario 1: Fetch payments for a specific settlement ID
+    // Scenario 1: Fetch payments for a specific settlement (View Breakdown modal)
     if (settlementId) {
-      // 1. Fetch settlement details first to get its created_at timestamp and status
+      // 1. Fetch settlement details to get created_at timestamp and status
       const settlementRes = await fetch(
         `https://api.razorpay.com/v1/settlements/${settlementId}`,
         { headers: { Authorization: authHeader } }
@@ -46,12 +46,44 @@ export async function GET(request: Request) {
       }
 
       const settlement = await settlementRes.json();
-      const settlementCreatedAt = settlement.created_at;
-      const isProcessed = settlement.status === "processed";
+      const settlementCreatedAt: number = settlement.created_at;
+      const isProcessed: boolean = settlement.status === "processed";
 
-      // 2. Fetch payments within a 30-day window ending 1 day after settlement creation
+      // 2. PRIMARY METHOD: Use Razorpay's Settlement Recon API to get the exact
+      //    list of payment IDs for this settlement. This is always accurate, unlike
+      //    settlement_id on individual payment objects which can lag by 24-72 hrs.
+      let reconPaymentIds: Set<string> = new Set();
+      let reconSucceeded = false;
+
+      try {
+        const d = new Date(settlementCreatedAt * 1000);
+        const year = d.getUTCFullYear();
+        const month = d.getUTCMonth() + 1;
+        const day = d.getUTCDate();
+
+        const reconRes = await fetch(
+          `https://api.razorpay.com/v1/settlements/recon/combined?year=${year}&month=${month}&day=${day}&count=100`,
+          { headers: { Authorization: authHeader } }
+        );
+
+        if (reconRes.ok) {
+          const reconData = await reconRes.json();
+          const reconItems: any[] = reconData.items || [];
+          // Filter recon items that belong to THIS specific settlement
+          for (const item of reconItems) {
+            if (item.settlement_id === settlementId && item.entity_id) {
+              reconPaymentIds.add(item.entity_id);
+            }
+          }
+          reconSucceeded = reconPaymentIds.size > 0;
+        }
+      } catch {
+        // Recon failed — will fall back to time-window method below
+      }
+
+      // 3. Fetch payments: use a time window that covers the settlement period
       const fromTime = settlementCreatedAt - 30 * 24 * 60 * 60; // 30 days before
-      const toTime = settlementCreatedAt + 1 * 24 * 60 * 60;    // 1 day after
+      const toTime   = settlementCreatedAt + 2 * 24 * 60 * 60;  // 2 days after
 
       const paymentsRes = await fetch(
         `https://api.razorpay.com/v1/payments?from=${fromTime}&to=${toTime}&count=100`,
@@ -64,22 +96,26 @@ export async function GET(request: Request) {
       }
 
       const paymentsData = await paymentsRes.json();
-      const payments = paymentsData.items || [];
+      const payments: any[] = paymentsData.items || [];
 
-      // 3. Filter payments:
-      // - Match directly if pay.settlement_id === settlementId
-      // - Or, if the settlement is not processed, match captured payments with no settlement_id created before/at the settlement time
+      // 4. Match payments to this settlement using the best available method:
+      //    - If recon succeeded → match by recon payment ID set (most accurate)
+      //    - Fallback → match by settlement_id field OR by time-window for pending settlements
       const matchedPayments = payments.filter((pay: any) => {
-        if (pay.settlement_id === settlementId) {
-          return true;
+        if (reconSucceeded) {
+          // Trust the recon result — includes payments Razorpay hasn't linked yet
+          return reconPaymentIds.has(pay.id);
         }
-        if (!isProcessed && (!pay.settlement_id || pay.settlement_id === null || pay.settlement_id === undefined)) {
+        // Fallback: direct settlement_id match on the payment object
+        if (pay.settlement_id === settlementId) return true;
+        // Fallback: for not-yet-processed settlements, include captured payments with no settlement_id
+        if (!isProcessed && (!pay.settlement_id || pay.settlement_id === null)) {
           return pay.status === "captured" && pay.created_at <= settlementCreatedAt;
         }
         return false;
       });
 
-      // Connect to DB and map bookings
+      // 5. Connect to DB and map to local bookings
       await connectToDatabase();
       const bookings = await prisma.booking.findMany({
         where: {
@@ -108,12 +144,13 @@ export async function GET(request: Request) {
         );
         return {
           id: pay.id,
-          amount: pay.amount / 100, // paise to INR
+          amount: pay.amount / 100,
           status: pay.status,
           method: pay.method,
           email: pay.email,
           contact: pay.contact,
           created_at: pay.created_at,
+          settlement_id: pay.settlement_id || (reconSucceeded ? settlementId : null),
           booking: booking ? {
             bookingId: booking.bookingId,
             guestName: booking.guestName,

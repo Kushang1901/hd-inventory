@@ -163,7 +163,7 @@ export async function GET(request: Request) {
       {
         id: "Standard",
         name: "Standard Room",
-        maxPersons: 3,
+        maxPersons: 2,
         subtypes: [
           { name: "AC Room", code: "AC", price: getDbPrice("Standard", "AC", 1500) },
           { name: "Non-AC Room", code: "Non-AC", price: getDbPrice("Standard", "Non-AC", 1200) }

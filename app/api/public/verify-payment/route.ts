@@ -41,10 +41,28 @@ async function getRoomRate(roomType: string, subtype: string): Promise<number> {
 
 async function sendOwnerTelegramNotification(booking: any) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
   
-  if (!botToken || !chatId) {
-    console.warn("Telegram bot token or chat ID is missing. Skipping owner notification.");
+  if (!botToken) {
+    console.warn("Telegram bot token is missing. Skipping owner notification.");
+    return;
+  }
+
+  let chatIds: string[] = [];
+  try {
+    // Fetch subscribers from the telegram_subscribers database collection
+    const subscribers = await prisma.telegramSubscriber.findMany();
+    chatIds = subscribers.map((sub: any) => sub.chatId);
+  } catch (err: any) {
+    console.error("Failed to fetch telegram subscribers from database:", err.message);
+  }
+
+  // Fallback to TELEGRAM_CHAT_ID if it is set in the environment and no users have subscribed yet
+  if (chatIds.length === 0 && process.env.TELEGRAM_CHAT_ID) {
+    chatIds.push(process.env.TELEGRAM_CHAT_ID);
+  }
+
+  if (chatIds.length === 0) {
+    console.warn("No Telegram subscribers found and no fallback TELEGRAM_CHAT_ID configured.");
     return;
   }
 
@@ -95,23 +113,26 @@ async function sendOwnerTelegramNotification(booking: any) {
     `<b>✍️ Special Requests:</b> ${specialRequests}\n\n` +
     `🎉 <b>Hotel Devang, Dwarka</b>`;
 
-  try {
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: htmlMessage,
-        parse_mode: "HTML"
-      })
-    });
-    const data = await response.json();
-    console.log("Telegram Owner Notification Response:", data);
-  } catch (error) {
-    console.error("Failed to notify owner via Telegram:", error);
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  for (const cid of chatIds) {
+    try {
+      console.log(`Sending Telegram booking message to: ${cid}...`);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          chat_id: cid,
+          text: htmlMessage,
+          parse_mode: "HTML"
+        })
+      });
+      const data = await response.json();
+      console.log(`Telegram Owner Notification Response for ${cid}:`, data);
+    } catch (error) {
+      console.error(`Failed to notify chat ${cid} via Telegram:`, error);
+    }
   }
 }
 
@@ -237,7 +258,7 @@ export async function POST(request: Request) {
 
     const roomDetailsForSave = await Promise.all(rooms.map(async (room: any) => {
       const baseRate = await getRoomRate(room.roomType, room.selectedSubtype);
-      const mattressCount = (room.guests > 2) ? (room.guests - 2) : 0;
+      const mattressCount = (room.guests > 2 && room.roomType !== "Standard") ? (room.guests - 2) : 0;
       const rate = baseRate + (mattressCount * 350);
       calculatedTotal += rate * room.quantity * nights;
       
@@ -246,7 +267,7 @@ export async function POST(request: Request) {
         selectedSubtype: room.selectedSubtype,
         quantity: Number(room.quantity),
         guests: Number(room.guests),
-        extraMattress: room.guests > 2,
+        extraMattress: room.guests > 2 && room.roomType !== "Standard",
         pricePerNight: rate
       };
     }));

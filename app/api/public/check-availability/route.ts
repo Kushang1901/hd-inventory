@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const recaptchaToken = searchParams.get("recaptchaToken");
 
     // Verify Turnstile token if configured or fallback to provided secret
-    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "0x4AAAAAAAD4ZhZGcg_h0waOkm2F1b8GHSwQ";
+    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "0x4AAAAAAD4ZhZGcg_h0waOkm2Flb8GHSwQ";
     if (recaptchaSecret) {
       if (!recaptchaToken) {
         return corsResponse(NextResponse.json({ success: false, error: "Please complete the verification challenge." }, { status: 400 }));

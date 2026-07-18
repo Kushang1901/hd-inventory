@@ -15,18 +15,27 @@ export async function GET(request: Request) {
     const checkOutStr = searchParams.get("checkOut");
     const recaptchaToken = searchParams.get("recaptchaToken");
 
-    // Verify reCAPTCHA token if configured or fallback to provided secret
-    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "6LfGM_osAAAAAOAtAHW1cR7GLsnK21bnFKg3oCcs";
+    // Verify Turnstile token if configured or fallback to provided secret
+    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "0x4AAAAAAAD4ZhZGcg_h0waOkm2F1b8GHSwQ";
     if (recaptchaSecret) {
       if (!recaptchaToken) {
-        return corsResponse(NextResponse.json({ success: false, error: "Please complete the reCAPTCHA verification." }, { status: 400 }));
+        return corsResponse(NextResponse.json({ success: false, error: "Please complete the verification challenge." }, { status: 400 }));
       }
       
-      const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${recaptchaToken}`;
-      const verifyRes = await fetch(verifyUrl, { method: "POST" });
+      const verifyUrl = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+      const verifyRes = await fetch(verifyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          secret: recaptchaSecret,
+          response: recaptchaToken
+        })
+      });
       const verifyData = await verifyRes.json();
       if (!verifyData.success) {
-        return corsResponse(NextResponse.json({ success: false, error: "Invalid reCAPTCHA verification. Please try again." }, { status: 400 }));
+        return corsResponse(NextResponse.json({ success: false, error: "Invalid verification. Please try again." }, { status: 400 }));
       }
     }
 

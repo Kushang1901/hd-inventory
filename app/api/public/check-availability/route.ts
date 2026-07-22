@@ -36,9 +36,12 @@ export async function GET(request: Request) {
       const verifyData = await verifyRes.json();
       console.log("Turnstile verification raw response:", verifyData);
       if (!verifyData.success) {
+        const maskedSecret = recaptchaSecret 
+          ? `${recaptchaSecret.slice(0, 10)}...${recaptchaSecret.slice(-5)}` 
+          : "undefined";
         return corsResponse(NextResponse.json({ 
           success: false, 
-          error: `Invalid verification. Please try again. (Details: ${JSON.stringify(verifyData["error-codes"] || verifyData)})`
+          error: `Invalid verification. Please try again. (Details: ${JSON.stringify(verifyData["error-codes"] || verifyData)} | Secret Key: ${maskedSecret})`
         }, { status: 400 }));
       }
     }

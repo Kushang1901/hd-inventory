@@ -26,16 +26,20 @@ export async function GET(request: Request) {
       const verifyRes = await fetch(verifyUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: JSON.stringify({
+        body: new URLSearchParams({
           secret: recaptchaSecret,
           response: recaptchaToken
-        })
+        }).toString()
       });
       const verifyData = await verifyRes.json();
+      console.log("Turnstile verification raw response:", verifyData);
       if (!verifyData.success) {
-        return corsResponse(NextResponse.json({ success: false, error: "Invalid verification. Please try again." }, { status: 400 }));
+        return corsResponse(NextResponse.json({ 
+          success: false, 
+          error: `Invalid verification. Please try again. (Details: ${JSON.stringify(verifyData["error-codes"] || verifyData)})`
+        }, { status: 400 }));
       }
     }
 

@@ -602,6 +602,21 @@ export default function BookingsManagement() {
                           <span>BALANCE DUE AT CHECK-IN:</span>
                           <span>₹{selectedBooking.dueAmount}</span>
                         </div>
+
+                        {/* Standard Booking Timings & Policies */}
+                        <div className="border-t border-dashed border-zinc-200 pt-3 mt-3 text-[9px] space-y-1 text-zinc-700 leading-normal">
+                          <div className="flex justify-between">
+                            <span className="font-semibold text-zinc-800">Check-In Time:</span>
+                            <span className="font-semibold text-zinc-900">12:30 PM onwards</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="font-semibold text-zinc-800">Check-Out Time:</span>
+                            <span className="font-semibold text-zinc-900">10:00 AM (Next Day)</span>
+                          </div>
+                          <p className="text-[8px] text-zinc-500 italic mt-1 leading-relaxed">
+                            * Note: 24-hour stay/booking service is not available. Standard check-in and check-out timings apply strictly.
+                          </p>
+                        </div>
                       </div>
                     );
                   })()}

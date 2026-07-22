@@ -15,9 +15,13 @@ export async function GET(request: Request) {
     const checkOutStr = searchParams.get("checkOut");
     const recaptchaToken = searchParams.get("recaptchaToken");
 
-    // Verify Turnstile token if configured or fallback to provided secret
-    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "0x4AAAAAAD4ZhZGcg_h0waOkm2Flb8GHSwQ";
-    if (recaptchaSecret) {
+    // Verify Turnstile token using Turnstile Secret Key (auto-fallback if Google reCAPTCHA key is configured in env)
+    let turnstileSecret = process.env.TURNSTILE_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY;
+    if (!turnstileSecret || !turnstileSecret.startsWith("0x4AAAAAA")) {
+      turnstileSecret = "0x4AAAAAAD4ZhZGcg_h0waOkm2Flb8GHSwQ";
+    }
+
+    if (turnstileSecret) {
       if (!recaptchaToken) {
         return corsResponse(NextResponse.json({ success: false, error: "Please complete the verification challenge." }, { status: 400 }));
       }
@@ -29,16 +33,19 @@ export async function GET(request: Request) {
           "Content-Type": "application/x-www-form-urlencoded"
         },
         body: new URLSearchParams({
-          secret: recaptchaSecret,
+          secret: turnstileSecret,
           response: recaptchaToken
         }).toString()
       });
       const verifyData = await verifyRes.json();
       console.log("Turnstile verification raw response:", verifyData);
       if (!verifyData.success) {
+        const maskedSecret = turnstileSecret 
+          ? `${turnstileSecret.slice(0, 10)}...${turnstileSecret.slice(-5)}` 
+          : "undefined";
         return corsResponse(NextResponse.json({ 
           success: false, 
-          error: `Invalid verification. Please try again. (Details: ${JSON.stringify(verifyData["error-codes"] || verifyData)})`
+          error: `Invalid verification. Please try again. (Details: ${JSON.stringify(verifyData["error-codes"] || verifyData)} | Secret Key: ${maskedSecret})`
         }, { status: 400 }));
       }
     }

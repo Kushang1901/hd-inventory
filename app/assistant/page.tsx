@@ -27,7 +27,6 @@ type AssistantResponse = {
   error?: string;
 };
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_HOTEL_ASSISTANT_API_URL || "").replace(/\/$/, "");
 
 const QUICK_PROMPTS = [
   "What room restrictions are active right now?",
@@ -72,7 +71,7 @@ export default function AssistantPage() {
     setInput("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

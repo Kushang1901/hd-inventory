@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { 
-  Search, 
-  Filter, 
-  Calendar, 
-  Phone, 
-  DollarSign, 
-  Printer, 
-  X, 
-  Clock, 
+import {
+  Search,
+  Filter,
+  Calendar,
+  Phone,
+  DollarSign,
+  Printer,
+  X,
+  Clock,
   User,
   CheckCircle,
   XCircle,
@@ -38,7 +38,7 @@ export default function BookingsManagement() {
     isOpen: false,
     title: "",
     message: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const fetchBookings = async () => {
@@ -274,7 +274,7 @@ export default function BookingsManagement() {
           </div>
 
           {/* Reload button */}
-          <button 
+          <button
             onClick={fetchBookings}
             className="rounded-xl text-xs font-bold uppercase tracking-wider py-2.5 px-4 cursor-pointer transition-all active:scale-[0.98]"
             style={{ background: "linear-gradient(135deg, #1E3A8A, #DC2626)", color: "white", boxShadow: "0 2px 10px rgba(30,58,138,0.3)" }}
@@ -506,7 +506,7 @@ export default function BookingsManagement() {
                     <span className="text-[9px] text-zinc-500 font-semibold block mt-0.5" style={{ fontFamily: "monospace", fontSize: "9px" }}>GSTIN: 24AADFH4542D2ZU</span>
                     <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-semibold block mt-0.5">Opp Circuit House, Hospital Rd, Dwarka, Gujarat 361335</span>
                     <span className="text-[10px] text-zinc-400 font-mono block mt-1">Ph: +91 98244 02132</span>
-                    
+
                     <div className="border-t border-b border-double border-red-900/30 py-1.5 mt-3 bg-red-50/30">
                       <span className="text-xs uppercase tracking-wider font-bold text-red-900 font-serif block">PROVISIONAL BILL</span>
                     </div>
@@ -529,7 +529,7 @@ export default function BookingsManagement() {
                   {/* Room items billing table */}
                   <div className="space-y-3">
                     <span className="text-[10px] font-bold text-red-900 uppercase tracking-wider block" style={{ color: "#880000" }}>Billing Summary</span>
-                    
+
                     <table className="w-full text-[10px] border-collapse">
                       <thead>
                         <tr className="border-b border-zinc-200 text-zinc-500 text-left font-semibold">
@@ -597,7 +597,7 @@ export default function BookingsManagement() {
                           <span>Advance Received Online (Razorpay):</span>
                           <span className="font-semibold">- ₹{selectedBooking.paidAmount}</span>
                         </div>
-                        
+
                         <div className="border-t border-double border-red-900/30 pt-2.5 flex justify-between text-xs font-bold text-red-950 font-serif" style={{ color: "#880000" }}>
                           <span>BALANCE DUE AT CHECK-IN:</span>
                           <span>₹{selectedBooking.dueAmount}</span>
@@ -611,7 +611,7 @@ export default function BookingsManagement() {
                           </div>
                           <div className="flex justify-between">
                             <span className="font-semibold text-zinc-800">Check-Out Time:</span>
-                            <span className="font-semibold text-zinc-900">10:00 AM (Next Day)</span>
+                            <span className="font-semibold text-zinc-900">10:00 AM </span>
                           </div>
                           <p className="text-[8px] text-zinc-500 italic mt-1 leading-relaxed">
                             * Note: 24-hour stay/booking service is not available. Standard check-in and check-out timings apply strictly.
@@ -626,7 +626,7 @@ export default function BookingsManagement() {
                     <div className="text-[9px] text-zinc-400 font-sans max-w-[160px] leading-relaxed">
                       * GST is compulsory for room booking purposes. This is a dynamic provisional booking confirmation. Bring this document at check-in.
                     </div>
-                    
+
                     {/* Stamp */}
                     <div className="h-14 min-w-[140px] px-2 border-2 border-emerald-600/40 rounded flex flex-col items-center justify-center rotate-[-4deg] text-emerald-600 font-mono font-bold tracking-widest text-center select-none uppercase">
                       <span className="text-[8px] border-b border-emerald-600/20 px-2 py-0.5">HOTEL DEVANG DWARKA</span>

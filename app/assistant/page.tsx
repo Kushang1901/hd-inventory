@@ -27,7 +27,7 @@ type AssistantResponse = {
   error?: string;
 };
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_HOTEL_ASSISTANT_API_URL || "http://localhost:3000").replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_HOTEL_ASSISTANT_API_URL || "").replace(/\/$/, "");
 
 const QUICK_PROMPTS = [
   "What room restrictions are active right now?",
@@ -81,6 +81,7 @@ export default function AssistantPage() {
           sessionId: sessionIdRef.current,
           userMessage: trimmedMessage,
           messages: nextMessages,
+          mode: "admin",
         }),
       });
 

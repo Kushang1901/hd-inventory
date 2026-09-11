@@ -1177,7 +1177,7 @@ export async function runTool(toolName: string, args: any, mode = "guest") {
 export function toGeminiContents(messages: any[]): any[] {
   if (!Array.isArray(messages)) return [];
 
-  return messages.flatMap((message) => {
+  const rawContents = messages.flatMap((message) => {
     if (!message) return [];
 
     if (
@@ -1186,22 +1186,27 @@ export function toGeminiContents(messages: any[]): any[] {
     ) {
       const entry: any = {
         role: message.role === "assistant" ? "model" : "user",
-        parts: [{ text: message.content }],
+        parts: message.functionCall
+          ? [{ functionCall: message.functionCall }]
+          : [{ text: message.content }],
       };
 
-      if (message.functionCall) {
-        entry.parts = [{ functionCall: message.functionCall }];
-      }
       return [entry];
     }
 
     if (message.role === "tool" && message.name && typeof message.content === "string") {
-      let responsePayload = message.content;
+      let responsePayload: any = message.content;
       try {
         responsePayload = JSON.parse(message.content);
       } catch {
         responsePayload = message.content;
       }
+
+      // Gemini API strictly requires functionResponse.response to be a JSON Object, never a bare Array!
+      const formattedResponse =
+        typeof responsePayload === "object" && responsePayload !== null && !Array.isArray(responsePayload)
+          ? responsePayload
+          : { result: responsePayload };
 
       return [
         {
@@ -1210,7 +1215,7 @@ export function toGeminiContents(messages: any[]): any[] {
             {
               functionResponse: {
                 name: message.name,
-                response: responsePayload,
+                response: formattedResponse,
               },
             },
           ],
@@ -1220,6 +1225,14 @@ export function toGeminiContents(messages: any[]): any[] {
 
     return [];
   });
+
+  // Gemini API strictly requires conversation contents to begin with a 'user' role turn!
+  // Strip any leading assistant/model greeting turns.
+  while (rawContents.length > 0 && rawContents[0].role !== "user") {
+    rawContents.shift();
+  }
+
+  return rawContents;
 }
 
 export function getGeminiToolDefinitions(mode = "guest") {

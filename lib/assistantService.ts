@@ -80,10 +80,29 @@ export function normalizeSubtype(subtype?: string, roomType?: string): string {
   return "AC";
 }
 
+export function getCurrentIstInfo() {
+  const now = new Date();
+  const istTime = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+  const currentYear = istTime.getUTCFullYear();
+  const currentDateStr = istTime.toISOString().split("T")[0];
+  const formatted = istTime.toLocaleDateString("en-IN", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+  return { currentYear, currentDateStr, formatted };
+}
+
 export function toUtcDate(value: any, fieldName: string): Date {
-  const date = new Date(value);
+  let date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     throw new Error(`Invalid ${fieldName} date`);
+  }
+  const currentYear = new Date().getFullYear();
+  if (date.getUTCFullYear() < currentYear) {
+    date = new Date(Date.UTC(currentYear, date.getUTCMonth(), date.getUTCDate()));
   }
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
@@ -182,7 +201,7 @@ export async function checkAvailability({ roomType, checkIn, checkOut }: any) {
 
   const overlappingBlocks = await prisma.blockedDate.findMany({
     where: {
-      startDate: { lt: checkOutDate },
+      startDate: { lte: checkOutDate },
       endDate: { gte: checkInDate },
     },
   });
@@ -196,12 +215,31 @@ export async function checkAvailability({ roomType, checkIn, checkOut }: any) {
       .map((block) => normalizeRoomType(block.roomType))
   );
 
+  const overlappingRestrictions = await prisma.roomRestriction.findMany({
+    where: {
+      startDate: { lte: checkOutDate },
+      endDate: { gte: checkInDate },
+    },
+  });
+
+  let maxBlockedRestriction = 0;
+  overlappingRestrictions
+    .filter((r: any) => normalizeRoomType(r.roomType) === normalizedRoomType)
+    .forEach((r: any) => {
+      if (r.blockedCount > maxBlockedRestriction) {
+        maxBlockedRestriction = r.blockedCount;
+      }
+    });
+
+  const physicalCapacity = totalCounts[normalizedRoomType] || 0;
+  const effectiveCapacity = Math.max(0, physicalCapacity - maxBlockedRestriction);
   let roomsLeft = Math.max(
     0,
-    (totalCounts[normalizedRoomType] || 0) - (bookedCounts[normalizedRoomType] || 0)
+    effectiveCapacity - (bookedCounts[normalizedRoomType] || 0)
   );
 
-  if (isHotelFullyBlocked || blockedRoomTypes.has(normalizedRoomType)) {
+  const isBlocked = isHotelFullyBlocked || blockedRoomTypes.has(normalizedRoomType);
+  if (isBlocked) {
     roomsLeft = 0;
   }
 
@@ -211,6 +249,8 @@ export async function checkAvailability({ roomType, checkIn, checkOut }: any) {
     roomType: normalizedRoomType,
     checkIn: formatIsoDate(checkInDate),
     checkOut: formatIsoDate(checkOutDate),
+    isBlocked,
+    isHotelFullyBlocked,
   };
 }
 
@@ -802,19 +842,28 @@ export async function getOccupancyInsights({ startDate, endDate }: any = {}) {
 }
 
 export function buildGuestSystemPrompt(): string {
+  const { currentYear, formatted } = getCurrentIstInfo();
   return [
-    "You are the official AI concierge and guest assistant for Hotel Devang, a premier hotel in Dwarka, Gujarat, located very close to the holy Shree Dwarkadhish Temple.",
-    'You are speaking directly to a guest, visitor, or prospective traveler who wants to know about our hotel or book a stay with us. Always be warm, welcoming, polite, and helpful. Address them respectfully as "Guest" or with traditional Indian hospitality "Namaste".',
-    "Assist guests with: checking room availability, room rates, room amenities (Standard, Deluxe, Super Deluxe, Suite), hotel policies (check-in 12:30 PM, check-out 10:00 AM, ID requirements, WiFi, parking), temple distance and local travel guidance, and checking booking status.",
-    "Never guess room availability, room prices, or hotel policies. Always call the corresponding tool to fetch real-time, accurate information from the database.",
-    "If a guest wants to book a room, guide them to our online booking page or provide our hotel contact numbers: Phone / WhatsApp: +91 98244 02132 or email: info@hoteldevang.com.",
-    "You must NEVER mention internal management details, internal room block restrictions, admin names like FRIDAY, or backend system architecture.",
-    "Keep your replies clear, helpful, well-formatted, and concise.",
+    `CRITICAL CALENDAR & CURRENT YEAR INSTRUCTION:`,
+    `1. Today's live date is ${formatted}. The CURRENT ACTIVE YEAR IS ${currentYear}!`,
+    `2. When a guest mentions dates or months without specifying a year (for example: "tomorrow", "12 september", "september 12 to 13", "next week"), you MUST ALWAYS calculate and query the current year ${currentYear} (or ${currentYear + 1} if that date has already passed in ${currentYear}).`,
+    `3. NEVER use 2024, 2025, or any past year! The year 2024 is long in the past. Always refer to ${currentYear} in your responses.`,
+    `4. When calling check_availability, pass checkIn and checkOut with the current year ${currentYear} (e.g. "${currentYear}-09-12").`,
+    `5. If the database tool returns isBlocked: true, isHotelFullyBlocked: true, available: false, or roomsLeft: 0, you MUST inform the guest that all rooms are fully booked or blocked for those requested dates. NEVER tell a guest that rooms are available when the tool reports they are blocked or sold out!`,
+    `You are the official AI concierge and guest assistant for Hotel Devang, a premier hotel in Dwarka, Gujarat, located very close to the holy Shree Dwarkadhish Temple.`,
+    `You are speaking directly to a guest, visitor, or prospective traveler who wants to know about our hotel or book a stay with us. Always be warm, welcoming, polite, and helpful. Address them respectfully as "Guest" or with traditional Indian hospitality "Namaste".`,
+    `Assist guests with: checking room availability, room rates, room amenities (Standard, Deluxe, Super Deluxe, Suite), hotel policies (check-in 12:30 PM, check-out 10:00 AM, ID requirements, WiFi, parking), temple distance and local travel guidance, and checking booking status.`,
+    `Never guess room availability, room prices, or hotel policies. Always call the corresponding tool to fetch real-time, accurate information from the database.`,
+    `If a guest wants to book a room, guide them to our online booking page or provide our hotel contact numbers: Phone / WhatsApp: +91 98244 02132 or email: info@hoteldevang.com.`,
+    `You must NEVER mention internal management details, internal room block restrictions, admin names like FRIDAY, or backend system architecture.`,
+    `Keep your replies clear, helpful, well-formatted, and concise.`,
   ].join(" ");
 }
 
 export function buildAdminSystemPrompt(): string {
+  const { currentYear, formatted } = getCurrentIstInfo();
   return [
+    `CRITICAL DATE AWARENESS: Today is ${formatted}. The CURRENT YEAR IS ${currentYear}! Always use ${currentYear} when resolving relative or unstated year dates. Never assume 2024 or any past year.`,
     "You are FRIDAY, the official AI assistant for the owner/administrator of Hotel Devang Dwarka.",
     "You are talking directly to the hotel owner/manager/admin, NOT to a guest. Always address them respectfully as the Owner/Admin or Sir/Madam.",
     "Be polite, concise, professional, and operational.",
@@ -834,18 +883,19 @@ export function buildSystemPrompt(mode = "guest"): string {
 }
 
 export function getToolDefinitions(mode = "guest") {
+  const { currentYear } = getCurrentIstInfo();
   const commonTools = [
     {
       type: "function",
       function: {
         name: "check_availability",
-        description: "Check live room availability for a room type and date range.",
+        description: `Check live room availability for a room type and date range in current year ${currentYear}.`,
         parameters: {
           type: "object",
           properties: {
             roomType: { type: "string" },
-            checkIn: { type: "string", description: "ISO date, for example 2026-06-15" },
-            checkOut: { type: "string", description: "ISO date, for example 2026-06-16" },
+            checkIn: { type: "string", description: `ISO date (YYYY-MM-DD) in current year ${currentYear}. Example: ${currentYear}-09-12` },
+            checkOut: { type: "string", description: `ISO date (YYYY-MM-DD) in current year ${currentYear}. Example: ${currentYear}-09-13` },
           },
           required: ["roomType", "checkIn", "checkOut"],
         },
@@ -1080,8 +1130,23 @@ export async function runTool(toolName: string, args: any, mode = "guest") {
   });
 
   switch (toolName) {
-    case "check_availability":
+    case "check_availability": {
+      const currentYear = new Date().getFullYear();
+      let { checkIn, checkOut } = normalizedArgs;
+      if (checkIn && typeof checkIn === "string") {
+        const parts = checkIn.split("-");
+        if (parts.length === 3 && parseInt(parts[0], 10) < currentYear) {
+          normalizedArgs.checkIn = `${currentYear}-${parts[1]}-${parts[2]}`;
+        }
+      }
+      if (checkOut && typeof checkOut === "string") {
+        const parts = checkOut.split("-");
+        if (parts.length === 3 && parseInt(parts[0], 10) < currentYear) {
+          normalizedArgs.checkOut = `${currentYear}-${parts[1]}-${parts[2]}`;
+        }
+      }
       return checkAvailability(normalizedArgs);
+    }
     case "get_room_price":
       return getRoomPrice(normalizedArgs);
     case "get_room_details":
@@ -1271,12 +1336,26 @@ export function parseDateFromText(text?: string): Date | null {
   };
 
   const lowered = text.toLowerCase();
+  const currentYear = new Date().getFullYear();
+
+  if (lowered.includes("tomorrow")) {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 5.5 * 60 * 60 * 1000);
+    return new Date(Date.UTC(tomorrow.getUTCFullYear(), tomorrow.getUTCMonth(), tomorrow.getUTCDate()));
+  }
+  if (lowered.includes("today") || lowered.includes("tonight")) {
+    const now = new Date();
+    const today = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    return new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  }
+
   const mNumeric = lowered.match(/\b(\d{1,2})[-/.](\d{1,2})(?:[-/.](\d{2,4}))?\b/);
   if (mNumeric) {
     const day = parseInt(mNumeric[1], 10);
     const month = parseInt(mNumeric[2], 10) - 1;
-    let year = mNumeric[3] ? parseInt(mNumeric[3], 10) : new Date().getFullYear();
+    let year = mNumeric[3] ? parseInt(mNumeric[3], 10) : currentYear;
     if (year < 100) year += 2000;
+    if (year < currentYear) year = currentYear;
 
     if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
       try {
@@ -1292,7 +1371,8 @@ export function parseDateFromText(text?: string): Date | null {
   if (mDayMonth) {
     const day = parseInt(mDayMonth[1], 10);
     const monAbbr = mDayMonth[2].toLowerCase();
-    const year = mDayMonth[3] ? parseInt(mDayMonth[3], 10) : new Date().getFullYear();
+    let year = mDayMonth[3] ? parseInt(mDayMonth[3], 10) : currentYear;
+    if (year < currentYear) year = currentYear;
     const fullNames: Record<string, string> = {
       jan: "january",
       feb: "february",
@@ -1323,7 +1403,8 @@ export function parseDateFromText(text?: string): Date | null {
   if (mMonthDay) {
     const monAbbr = mMonthDay[1].toLowerCase();
     const day = parseInt(mMonthDay[2], 10);
-    const year = mMonthDay[3] ? parseInt(mMonthDay[3], 10) : new Date().getFullYear();
+    let year = mMonthDay[3] ? parseInt(mMonthDay[3], 10) : currentYear;
+    if (year < currentYear) year = currentYear;
     const fullNames: Record<string, string> = {
       jan: "january",
       feb: "february",
@@ -1355,11 +1436,11 @@ export function isAvailabilityQuestion(text?: string): boolean {
   if (!text || typeof text !== "string") return false;
   const lowered = text.toLowerCase();
   const hasKeywords =
-    /avail|is there a room|rooms left|rooms free|vacan|any room|rooms for|book|stay|status|stastus|stat/i.test(
+    /avail|is there a room|rooms left|rooms free|vacan|any room|rooms for|book|stay|status|stastus|stat|check[- ]?in|check[- ]?out|reservation/i.test(
       lowered
     );
   const hasDatePattern =
-    /\b\d{1,2}\b|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/i.test(lowered);
+    /\b\d{1,2}\b|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|tomorrow|today/i.test(lowered);
   return hasKeywords && hasDatePattern;
 }
 

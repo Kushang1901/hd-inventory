@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { connect } = require("mongoose");
-
-const MONGODB_URI = "mongodb+srv://kushang:BenTennyson%4010@cluster0.qzcvrhp.mongodb.net/hotel_devang";
+require("dotenv").config();
+const MONGODB_URI = process.env.MONGODB_URI;
 
 const BlockedDateSchema = new mongoose.Schema({
   startDate: { type: Date, required: true },

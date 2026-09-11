@@ -81,6 +81,7 @@ export default function AssistantPage() {
           sessionId: sessionIdRef.current,
           userMessage: trimmedMessage,
           messages: nextMessages,
+          mode: "admin",
         }),
       });
 

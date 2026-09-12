@@ -15,11 +15,8 @@ export async function GET(request: Request) {
     const checkOutStr = searchParams.get("checkOut");
     const recaptchaToken = searchParams.get("recaptchaToken");
 
-    // Verify Turnstile token using Turnstile Secret Key (auto-fallback if Google reCAPTCHA key is configured in env)
-    let turnstileSecret = process.env.TURNSTILE_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY;
-    if (!turnstileSecret || !turnstileSecret.startsWith("0x4AAAAAA")) {
-      turnstileSecret = "0x4AAAAAAD4ZhZGcg_h0waOkm2Flb8GHSwQ";
-    }
+    // Verify Turnstile token using Turnstile Secret Key from environment
+    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY;
 
     if (turnstileSecret) {
       if (!recaptchaToken) {
@@ -38,14 +35,11 @@ export async function GET(request: Request) {
         }).toString()
       });
       const verifyData = await verifyRes.json();
-      console.log("Turnstile verification raw response:", verifyData);
       if (!verifyData.success) {
-        const maskedSecret = turnstileSecret 
-          ? `${turnstileSecret.slice(0, 10)}...${turnstileSecret.slice(-5)}` 
-          : "undefined";
+        console.error("Turnstile verification failed:", verifyData);
         return corsResponse(NextResponse.json({ 
           success: false, 
-          error: `Invalid verification. Please try again. (Details: ${JSON.stringify(verifyData["error-codes"] || verifyData)} | Secret Key: ${maskedSecret})`
+          error: "Verification failed. Please try again."
         }, { status: 400 }));
       }
     }

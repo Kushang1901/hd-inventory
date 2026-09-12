@@ -5,8 +5,8 @@ export async function POST(request: Request) {
   try {
     const { username, password, recaptchaToken } = await request.json();
 
-    // Verify reCAPTCHA token if configured or fallback to provided secret
-    const recaptchaSecret = process.env.LOGIN_RECAPTCHA_SECRET_KEY || "6LffN_osAAAAAGIhL6CVegE9T9y0EguY8-VhxFIH";
+    // Verify reCAPTCHA token if configured in environment
+    const recaptchaSecret = process.env.LOGIN_RECAPTCHA_SECRET_KEY;
     if (recaptchaSecret) {
       if (!recaptchaToken) {
         return NextResponse.json(

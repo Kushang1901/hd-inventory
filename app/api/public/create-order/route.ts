@@ -246,7 +246,7 @@ export async function POST(request: Request) {
 
     return corsResponse(NextResponse.json({
       success: true,
-      keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_SsUweEky8qbyAL",
+      keyId: process.env.RAZORPAY_KEY_ID || "",
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,

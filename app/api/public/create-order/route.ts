@@ -8,8 +8,8 @@ export async function OPTIONS() {
 }
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_SsUweEky8qbyAL",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "rkpHwK2w8V4TTQkzWtTlsYRq"
+  key_id: process.env.RAZORPAY_KEY_ID || "",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || ""
 });
 
 // Price lookup helper (Dynamic lookup on server side for safety)

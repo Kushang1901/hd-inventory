@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 
 export function corsHeaders() {
   return {
-    "Access-Control-Allow-Origin": "*", // Allow all origins for public APIs, or specify "https://hoteldevang.com"
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PATCH, DELETE",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, x-telegram-bot-api-secret-token",
+    "Access-Control-Max-Age": "86400",
   };
 }
 

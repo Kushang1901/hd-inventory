@@ -25,7 +25,9 @@ export function verifyToken(token: string): any {
   hmac.update(`${header}.${payload}`);
   const expectedSignature = hmac.digest().toString("base64url");
   
-  if (signature !== expectedSignature) {
+  const expectedBuf = Buffer.from(expectedSignature, "utf8");
+  const actualBuf = Buffer.from(signature, "utf8");
+  if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) {
     return null;
   }
   

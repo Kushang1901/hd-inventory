@@ -158,14 +158,21 @@ export async function POST(request: Request) {
     }
 
     // Verify signature
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || "";
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) {
+      console.error("Critical: RAZORPAY_KEY_SECRET is not configured on the server.");
+      return corsResponse(NextResponse.json({ success: false, error: "Payment verification system configuration error" }, { status: 500 }));
+    }
+
     const text = `${razorpay_order_id}|${razorpay_payment_id}`;
     const generatedSignature = crypto
       .createHmac("sha256", keySecret)
       .update(text)
       .digest("hex");
 
-    const isSignatureValid = generatedSignature === razorpay_signature;
+    const genBuf = Buffer.from(generatedSignature, "utf8");
+    const sigBuf = Buffer.from(String(razorpay_signature), "utf8");
+    const isSignatureValid = genBuf.length === sigBuf.length && crypto.timingSafeEqual(genBuf, sigBuf);
 
     if (!isSignatureValid) {
       return corsResponse(NextResponse.json({ success: false, error: "Payment verification failed. Invalid signature." }, { status: 400 }));

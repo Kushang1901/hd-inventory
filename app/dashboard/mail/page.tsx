@@ -25,6 +25,8 @@ import {
   Landmark,
   Sparkles,
   CornerDownLeft,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -154,6 +156,18 @@ export default function MailCenterPage() {
   const [filterType, setFilterType] = useState<"all" | "unread" | "starred">("all");
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
+
+  // Close fullscreen on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreenOpen(false);
+    };
+    if (fullscreenOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [fullscreenOpen]);
 
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeTo, setComposeTo] = useState("");
@@ -220,7 +234,11 @@ export default function MailCenterPage() {
     const r = await fetch(`/api/mail?uid=${uid}&folder=${folder}`, { method: "DELETE" });
     if (r.ok) {
       setEmails(prev => prev.filter(x => x.uid !== uid));
-      if (selectedUid === uid) { setSelectedUid(null); setCurrentEmail(null); }
+      if (selectedUid === uid) {
+        setSelectedUid(null);
+        setCurrentEmail(null);
+        setFullscreenOpen(false);
+      }
     }
   };
 
@@ -514,6 +532,10 @@ export default function MailCenterPage() {
                     {currentEmail.subject}
                   </h2>
                   <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                    <button onClick={() => setFullscreenOpen(true)} title="View full screen"
+                      style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: "#f8fafc", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Maximize2 style={{ height: 16, width: 16 }} />
+                    </button>
                     <button onClick={(e) => toggleStar(currentEmail.uid, currentEmail.isStarred, e)} title="Star"
                       style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: currentEmail.isStarred ? "#fffbeb" : "#f8fafc", color: currentEmail.isStarred ? "#f59e0b" : "#94a3b8" }}>
                       <Star style={{ height: 16, width: 16, fill: currentEmail.isStarred ? "#f59e0b" : "none" }} />
@@ -698,6 +720,293 @@ export default function MailCenterPage() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ FULLSCREEN EMAIL MODAL ════════════════════════════════════════════ */}
+      {fullscreenOpen && currentEmail && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setFullscreenOpen(false);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(15,23,42,0.65)",
+            backdropFilter: "blur(6px)",
+            padding: 16,
+            boxSizing: "border-box" as const,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 1040,
+              height: "94vh",
+              background: "#ffffff",
+              borderRadius: 16,
+              boxShadow: "0 25px 60px -15px rgba(0,0,0,0.35), 0 0 0 1px rgba(226,232,240,0.8)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            {/* Fullscreen Header */}
+            <div
+              style={{
+                padding: "16px 24px",
+                borderBottom: "1px solid #f1f5f9",
+                background: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      textTransform: "uppercase" as const,
+                      letterSpacing: "0.08em",
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      background: "#eff6ff",
+                      color: "#2563eb",
+                    }}
+                  >
+                    {folder}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                    {new Date(currentEmail.date).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}
+                  </span>
+                </div>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap" as const,
+                    lineHeight: 1.3,
+                  }}
+                  title={currentEmail.subject}
+                >
+                  {currentEmail.subject}
+                </h1>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                <button
+                  onClick={(e) => toggleStar(currentEmail.uid, currentEmail.isStarred, e)}
+                  title="Star"
+                  style={{
+                    padding: 8,
+                    borderRadius: 8,
+                    border: "1px solid #e2e8f0",
+                    cursor: "pointer",
+                    background: currentEmail.isStarred ? "#fffbeb" : "#f8fafc",
+                    color: currentEmail.isStarred ? "#f59e0b" : "#64748b",
+                    display: "flex",
+                  }}
+                >
+                  <Star style={{ height: 16, width: 16, fill: currentEmail.isStarred ? "#f59e0b" : "none" }} />
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  title="Print"
+                  style={{
+                    padding: 8,
+                    borderRadius: 8,
+                    border: "1px solid #e2e8f0",
+                    cursor: "pointer",
+                    background: "#f8fafc",
+                    color: "#64748b",
+                    display: "flex",
+                  }}
+                >
+                  <Printer style={{ height: 16, width: 16 }} />
+                </button>
+                <button
+                  onClick={() => setFullscreenOpen(false)}
+                  title="Exit Fullscreen (Esc)"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 14px",
+                    borderRadius: 8,
+                    border: "1px solid #0f172a",
+                    background: "#0f172a",
+                    color: "#ffffff",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(15,23,42,0.15)",
+                  }}
+                >
+                  <Minimize2 style={{ height: 14, width: 14 }} />
+                  <span>Exit Fullscreen</span>
+                </button>
+                <button
+                  onClick={() => setFullscreenOpen(false)}
+                  title="Close"
+                  style={{
+                    padding: 7,
+                    borderRadius: 8,
+                    border: "1px solid #e2e8f0",
+                    background: "#f8fafc",
+                    color: "#64748b",
+                    cursor: "pointer",
+                    display: "flex",
+                  }}
+                >
+                  <X style={{ height: 16, width: 16 }} />
+                </button>
+              </div>
+            </div>
+
+            {/* Sender Subheader bar */}
+            <div
+              style={{
+                padding: "12px 24px",
+                borderBottom: "1px solid #f1f5f9",
+                background: "#f8fafc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    height: 38,
+                    width: 38,
+                    borderRadius: "50%",
+                    background: getAvatarGradient(currentEmail.fromName),
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {getInitials(currentEmail.fromName)}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
+                    {currentEmail.fromName}
+                    <span style={{ fontWeight: 400, color: "#64748b", marginLeft: 8, fontSize: 12, fontFamily: "monospace" }}>
+                      &lt;{currentEmail.fromAddress}&gt;
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>
+                    To: {currentEmail.to || "info@hoteldevang.com"}
+                  </div>
+                </div>
+              </div>
+
+              {currentEmail.attachments && currentEmail.attachments.length > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#64748b" }}>
+                  <Paperclip style={{ height: 13, width: 13, color: "#94a3b8" }} />
+                  <span>{currentEmail.attachments.length} attachment{currentEmail.attachments.length > 1 ? "s" : ""}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Attachments chips if any */}
+            {currentEmail.attachments && currentEmail.attachments.length > 0 && (
+              <div
+                style={{
+                  padding: "8px 24px",
+                  background: "#f1f5f9",
+                  borderBottom: "1px solid #e2e8f0",
+                  display: "flex",
+                  flexWrap: "wrap" as const,
+                  gap: 8,
+                  flexShrink: 0,
+                }}
+              >
+                {currentEmail.attachments.map((a, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "5px 12px",
+                      background: "#fff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: "#334155",
+                    }}
+                  >
+                    <Paperclip style={{ height: 12, width: 12, color: "#94a3b8" }} />
+                    <span style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                      {a.filename || "Attachment"}
+                    </span>
+                    <span style={{ color: "#94a3b8" }}>({Math.round(a.size / 1024)} KB)</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Scrollable Email Body */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto" as const,
+                padding: "24px 32px",
+                background: "#f8fafc",
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: 960,
+                  margin: "0 auto",
+                  background: "#ffffff",
+                  borderRadius: 12,
+                  border: "1px solid #e2e8f0",
+                  padding: "24px 28px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                }}
+              >
+                {currentEmail.html ? (
+                  <IframeEmail html={currentEmail.html} />
+                ) : (
+                  <pre
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif",
+                      fontSize: 14,
+                      color: "#334155",
+                      lineHeight: 1.8,
+                      margin: 0,
+                    }}
+                  >
+                    {currentEmail.text}
+                  </pre>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

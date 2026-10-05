@@ -93,6 +93,50 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+// ─── Sandboxed iframe email renderer ───────────────────────────────────────
+function IframeEmail({ html }: { html: string }) {
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+  React.useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <style>
+        html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; }
+        img { max-width: 100%; height: auto; }
+        a { color: #2563eb; }
+        table { border-collapse: collapse; }
+      </style>
+    </head><body>${html}</body></html>`);
+    doc.close();
+
+    // Auto-resize to content height
+    const resize = () => {
+      if (iframe && iframe.contentWindow) {
+        const h = iframe.contentWindow.document.documentElement.scrollHeight;
+        iframe.style.height = `${Math.max(h, 200)}px`;
+      }
+    };
+    iframe.onload = resize;
+    setTimeout(resize, 120);
+  }, [html]);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      title="Email content"
+      sandbox="allow-same-origin"
+      style={{ width: "100%", minHeight: "200px", border: "none", display: "block" }}
+    />
+  );
+}
+
 const FOLDER_ICONS: Record<string, React.ReactNode> = {
   inbox: <Inbox className="h-4 w-4" />,
   sent: <Send className="h-4 w-4" />,
@@ -573,15 +617,14 @@ export default function MailCenterPage() {
                 </div>
               )}
 
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5">
+              {/* Body — sandboxed iframe so rich HTML emails don't break page CSS */}
+              <div className="flex-1 overflow-y-auto">
                 {currentEmail.html ? (
-                  <div
-                    dangerouslySetInnerHTML={{ __html: currentEmail.html }}
-                    className="prose prose-sm max-w-none text-slate-800"
-                  />
+                  <div className="px-2 py-4">
+                    <IframeEmail html={currentEmail.html} />
+                  </div>
                 ) : (
-                  <pre className="whitespace-pre-wrap font-sans text-sm text-slate-700 leading-relaxed">
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-slate-700 leading-relaxed px-6 py-5">
                     {currentEmail.text}
                   </pre>
                 )}

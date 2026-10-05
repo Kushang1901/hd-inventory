@@ -242,6 +242,174 @@ export default function MailCenterPage() {
     }
   };
 
+  // ─── Print Isolated Email ──────────────────────────────────────────────────
+  const handlePrintEmail = (email: EmailDetail) => {
+    if (!email) return;
+
+    const oldFrame = document.getElementById("email-print-frame");
+    if (oldFrame) oldFrame.remove();
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "email-print-frame";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    iframe.style.opacity = "0";
+    iframe.style.pointerEvents = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    const contentHtml = email.html
+      ? email.html
+      : `<pre style="white-space: pre-wrap; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; margin: 0;">${(email.text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`;
+
+    const attachmentsList = email.attachments && email.attachments.length > 0
+      ? `<tr>
+          <td style="padding: 4px 0; color: #64748b; font-weight: 600; width: 90px; vertical-align: top;">Attachments:</td>
+          <td style="padding: 4px 0; color: #1e293b;">${email.attachments.map(a => `${(a.filename || "Attachment").replace(/</g, "&lt;").replace(/>/g, "&gt;")} (${Math.round((a.size || 0) / 1024)} KB)`).join(", ")}</td>
+        </tr>`
+      : "";
+
+    doc.open();
+    doc.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>${(email.subject || "Email").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</title>
+  <style>
+    @page {
+      margin: 15mm 15mm 15mm 15mm;
+      size: auto;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .print-header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+    .print-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 12px 0;
+      line-height: 1.35;
+    }
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .meta-table td {
+      vertical-align: top;
+    }
+    .meta-label {
+      width: 70px;
+      color: #64748b;
+      font-weight: 600;
+      padding: 3px 0;
+    }
+    .meta-value {
+      color: #0f172a;
+      padding: 3px 0;
+    }
+    .print-body {
+      width: 100%;
+      color: #1e293b;
+    }
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+    table {
+      max-width: 100% !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="print-header">
+    <h1 class="print-title">${(email.subject || "Untitled Email").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</h1>
+    <table class="meta-table">
+      <tr>
+        <td class="meta-label">From:</td>
+        <td class="meta-value"><strong>${(email.fromName || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</strong> &lt;${(email.fromAddress || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}&gt;</td>
+      </tr>
+      <tr>
+        <td class="meta-label">To:</td>
+        <td class="meta-value">${(email.to || "info@hoteldevang.com").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Date:</td>
+        <td class="meta-value">${new Date(email.date).toLocaleString([], { dateStyle: "full", timeStyle: "medium" })}</td>
+      </tr>
+      ${attachmentsList}
+    </table>
+  </div>
+  <div class="print-body">
+    ${contentHtml}
+  </div>
+</body>
+</html>`);
+    doc.close();
+
+    const doPrint = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (err) {
+        console.error("Print error:", err);
+      }
+    };
+
+    const imgs = iframe.contentWindow?.document.images;
+    if (imgs && imgs.length > 0) {
+      let loaded = 0;
+      let fired = false;
+      const timer = setTimeout(() => {
+        if (!fired) { fired = true; doPrint(); }
+      }, 700);
+
+      Array.from(imgs).forEach(img => {
+        if (img.complete) {
+          loaded++;
+          if (loaded === imgs.length && !fired) {
+            fired = true;
+            clearTimeout(timer);
+            doPrint();
+          }
+        } else {
+          img.onload = img.onerror = () => {
+            loaded++;
+            if (loaded === imgs.length && !fired) {
+              fired = true;
+              clearTimeout(timer);
+              doPrint();
+            }
+          };
+        }
+      });
+    } else {
+      setTimeout(doPrint, 250);
+    }
+  };
+
   // ─── Guest search ────────────────────────────────────────────────────────────
   const handleGuestSearch = async (val: string) => {
     setComposeTo(val);
@@ -540,8 +708,8 @@ export default function MailCenterPage() {
                       style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: currentEmail.isStarred ? "#fffbeb" : "#f8fafc", color: currentEmail.isStarred ? "#f59e0b" : "#94a3b8" }}>
                       <Star style={{ height: 16, width: 16, fill: currentEmail.isStarred ? "#f59e0b" : "none" }} />
                     </button>
-                    <button onClick={() => window.print()} title="Print"
-                      style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: "#f8fafc", color: "#94a3b8" }}>
+                    <button onClick={() => currentEmail && handlePrintEmail(currentEmail)} title="Print email"
+                      style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: "#f8fafc", color: "#64748b" }}>
                       <Printer style={{ height: 16, width: 16 }} />
                     </button>
                     <button onClick={() => deleteEmail(currentEmail.uid)} title="Delete"
@@ -825,8 +993,8 @@ export default function MailCenterPage() {
                   <Star style={{ height: 16, width: 16, fill: currentEmail.isStarred ? "#f59e0b" : "none" }} />
                 </button>
                 <button
-                  onClick={() => window.print()}
-                  title="Print"
+                  onClick={() => currentEmail && handlePrintEmail(currentEmail)}
+                  title="Print email"
                   style={{
                     padding: 8,
                     borderRadius: 8,

@@ -4,8 +4,8 @@ import nodemailer from "nodemailer";
 import { simpleParser, ParsedMail } from "mailparser";
 
 export const HOSTINGER_CONFIG = {
-  user: process.env.HOSTINGER_EMAIL_USER || "info@hoteldevang.com",
-  pass: process.env.HOSTINGER_EMAIL_PASS || "Devang@2026",
+  user: process.env.HOSTINGER_EMAIL_USER || "",
+  pass: process.env.HOSTINGER_EMAIL_PASS || "",
   imapHost: process.env.HOSTINGER_IMAP_HOST || "imap.hostinger.com",
   imapPort: Number(process.env.HOSTINGER_IMAP_PORT) || 993,
   smtpHost: process.env.HOSTINGER_SMTP_HOST || "smtp.hostinger.com",

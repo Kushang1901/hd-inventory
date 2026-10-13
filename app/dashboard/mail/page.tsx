@@ -19,6 +19,9 @@ import {
   Printer,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  GripHorizontal,
   MailOpen,
   Building2,
   CreditCard,
@@ -112,24 +115,51 @@ function IframeEmail({ html }: { html: string }) {
       <meta name="viewport" content="width=device-width,initial-scale=1"/>
       <style>
         *{box-sizing:border-box}
-        html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;line-height:1.65;color:#1e293b;background:#fff}
-        img{max-width:100%;height:auto}
-        a{color:#2563eb}
-        table{border-collapse:collapse;max-width:100%}
-        td{word-break:break-word}
-        pre{white-space:pre-wrap;word-break:break-all}
+        html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#1e293b;background:#fff}
+        img{max-width:100% !important;height:auto !important;vertical-align:middle}
+        a{color:#2563eb;text-decoration:underline}
+        table{max-width:100% !important;border-collapse:collapse}
+        td,th{word-break:break-word}
+        pre{white-space:pre-wrap;word-break:break-word}
+        body{overflow-x:auto;padding:8px 0}
       </style>
     </head><body>${html}</body></html>`);
     doc.close();
+
     const resize = () => {
-      if (iframe?.contentWindow) {
-        const h = iframe.contentWindow.document.documentElement.scrollHeight;
-        iframe.style.height = Math.max(h + 16, 120) + "px";
+      if (iframe?.contentWindow?.document) {
+        const body = iframe.contentWindow.document.body;
+        const docEl = iframe.contentWindow.document.documentElement;
+        if (body && docEl) {
+          const h = Math.max(
+            body.scrollHeight || 0,
+            body.offsetHeight || 0,
+            docEl.clientHeight || 0,
+            docEl.scrollHeight || 0
+          );
+          iframe.style.height = `${Math.max(h + 24, 160)}px`;
+        }
       }
     };
+
     iframe.onload = resize;
-    setTimeout(resize, 200);
-    setTimeout(resize, 800);
+
+    // Attach listener to any loaded images
+    const imgs = doc.querySelectorAll("img");
+    imgs.forEach(img => {
+      img.addEventListener("load", resize);
+    });
+
+    const timers = [
+      setTimeout(resize, 100),
+      setTimeout(resize, 350),
+      setTimeout(resize, 800),
+      setTimeout(resize, 1500),
+    ];
+
+    return () => {
+      timers.forEach(t => clearTimeout(t));
+    };
   }, [html]);
 
   return (
@@ -137,7 +167,7 @@ function IframeEmail({ html }: { html: string }) {
       ref={ref}
       title="Email content"
       sandbox="allow-same-origin"
-      style={{ width: "100%", minHeight: "120px", border: "none", display: "block" }}
+      style={{ width: "100%", minHeight: "160px", border: "none", display: "block" }}
     />
   );
 }
@@ -180,6 +210,45 @@ export default function MailCenterPage() {
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+
+  // ─── Resizable & Double-clickable Reply Box ────────────────────────────────
+  const [replyBoxHeight, setReplyBoxHeight] = useState(54); // Default small proper rectangle
+  const [isDragging, setIsDragging] = useState(false);
+  const replyDragStartY = useRef<number>(0);
+  const replyDragStartH = useRef<number>(54);
+  const replyInputRef = useRef<HTMLInputElement>(null);
+  const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    replyDragStartY.current = e.clientY;
+    replyDragStartH.current = replyBoxHeight;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = replyDragStartY.current - moveEvent.clientY; // moving up increases height
+      const newHeight = Math.max(54, Math.min(480, replyDragStartH.current + delta));
+      setReplyBoxHeight(newHeight);
+    };
+
+    const onMouseUp = () => {
+      setIsDragging(false);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
+
+  const handleDoubleClickBorder = () => {
+    if (replyBoxHeight <= 75) {
+      setReplyBoxHeight(220);
+      setTimeout(() => replyTextareaRef.current?.focus(), 60);
+    } else {
+      setReplyBoxHeight(54);
+    }
+  };
 
   // ─── Fetch list ──────────────────────────────────────────────────────────────
   const fetchEmails = useCallback(async (f: string, p = 1, silent = false) => {
@@ -675,7 +744,11 @@ export default function MailCenterPage() {
         </div>
 
         {/* ── Reading Pane ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#ffffff" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#f8fafc", position: "relative" }}>
+          {isDragging && (
+            <div style={{ position: "fixed", inset: 0, zIndex: 99999, cursor: "ns-resize", userSelect: "none" }} />
+          )}
+
           {loadingDetail ? (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "#94a3b8" }}>
               <div style={{ height: 32, width: 32, borderRadius: "50%", border: "2.5px solid #e2e8f0", borderTopColor: "#2563eb", animation: "spin 0.8s linear infinite" }} />
@@ -694,41 +767,62 @@ export default function MailCenterPage() {
           ) : (
             <>
               {/* Email Header */}
-              <div style={{ padding: "20px 28px 16px", borderBottom: "1px solid #f1f5f9", flexShrink: 0, background: "#fff" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-                  <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#0f172a", lineHeight: 1.35, flex: 1, paddingRight: 16 }}>
-                    {currentEmail.subject}
-                  </h2>
-                  <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+              <div style={{ padding: "16px 24px 14px", borderBottom: "1px solid #e2e8f0", flexShrink: 0, background: "#ffffff", boxShadow: "0 1px 2px rgba(15,23,42,0.03)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", padding: "2px 8px", borderRadius: 6, background: "#eff6ff", color: "#2563eb", flexShrink: 0 }}>
+                      {folder}
+                    </span>
+                    <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }} title={currentEmail.subject}>
+                      {currentEmail.subject}
+                    </h2>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                    <button
+                      onClick={() => {
+                        setReplyBoxHeight(220);
+                        setTimeout(() => replyTextareaRef.current?.focus(), 60);
+                      }}
+                      title="Reply"
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: "#f8fafc", color: "#2563eb", fontSize: 12, fontWeight: 600 }}
+                    >
+                      <CornerDownLeft style={{ height: 14, width: 14 }} />
+                      <span>Reply</span>
+                    </button>
                     <button onClick={() => setFullscreenOpen(true)} title="View full screen"
-                      style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: "#f8fafc", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Maximize2 style={{ height: 16, width: 16 }} />
+                      style={{ padding: 7, borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: "#f8fafc", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Maximize2 style={{ height: 15, width: 15 }} />
                     </button>
                     <button onClick={(e) => toggleStar(currentEmail.uid, currentEmail.isStarred, e)} title="Star"
-                      style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: currentEmail.isStarred ? "#fffbeb" : "#f8fafc", color: currentEmail.isStarred ? "#f59e0b" : "#94a3b8" }}>
-                      <Star style={{ height: 16, width: 16, fill: currentEmail.isStarred ? "#f59e0b" : "none" }} />
+                      style={{ padding: 7, borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: currentEmail.isStarred ? "#fffbeb" : "#f8fafc", color: currentEmail.isStarred ? "#f59e0b" : "#94a3b8" }}>
+                      <Star style={{ height: 15, width: 15, fill: currentEmail.isStarred ? "#f59e0b" : "none" }} />
                     </button>
                     <button onClick={() => currentEmail && handlePrintEmail(currentEmail)} title="Print email"
-                      style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: "#f8fafc", color: "#64748b" }}>
-                      <Printer style={{ height: 16, width: 16 }} />
+                      style={{ padding: 7, borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: "#f8fafc", color: "#64748b" }}>
+                      <Printer style={{ height: 15, width: 15 }} />
                     </button>
                     <button onClick={() => deleteEmail(currentEmail.uid)} title="Delete"
-                      style={{ padding: 7, borderRadius: 8, border: "none", cursor: "pointer", background: "#f8fafc", color: "#94a3b8" }}>
-                      <Trash2 style={{ height: 16, width: 16 }} />
+                      style={{ padding: 7, borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", background: "#f8fafc", color: "#94a3b8" }}>
+                      <Trash2 style={{ height: 15, width: 15 }} />
                     </button>
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ height: 42, width: 42, borderRadius: "50%", background: getAvatarGradient(currentEmail.fromName), display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 15, fontWeight: 700, flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ height: 38, width: 38, borderRadius: "50%", background: getAvatarGradient(currentEmail.fromName), display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: "0 2px 6px rgba(0,0,0,0.08)" }}>
                       {getInitials(currentEmail.fromName)}
                     </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>{currentEmail.fromName}</div>
-                      <div style={{ fontSize: 12, color: "#64748b", fontFamily: "monospace", marginTop: 1 }}>{currentEmail.fromAddress}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{currentEmail.fromName}</span>
+                        <span style={{ fontSize: 11, color: "#64748b", fontFamily: "monospace" }}>&lt;{currentEmail.fromAddress}&gt;</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>
+                        To: {currentEmail.to || "info@hoteldevang.com"}
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#94a3b8" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "#94a3b8" }}>
                     <Clock style={{ height: 12, width: 12 }} />
                     {new Date(currentEmail.date).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
                   </div>
@@ -737,9 +831,9 @@ export default function MailCenterPage() {
 
               {/* Attachments */}
               {currentEmail.attachments && currentEmail.attachments.length > 0 && (
-                <div style={{ padding: "10px 28px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap" as const, gap: 8, flexShrink: 0 }}>
+                <div style={{ padding: "8px 24px", background: "#f1f5f9", borderBottom: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap" as const, gap: 8, flexShrink: 0 }}>
                   {currentEmail.attachments.map((a, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12, color: "#374151" }}>
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 12, color: "#334155" }}>
                       <Paperclip style={{ height: 12, width: 12, color: "#94a3b8" }} />
                       <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{a.filename || "Attachment"}</span>
                       <span style={{ color: "#94a3b8" }}>({Math.round(a.size / 1024)} KB)</span>
@@ -748,42 +842,333 @@ export default function MailCenterPage() {
                 </div>
               )}
 
-              {/* Email Body — scrollable */}
-              <div style={{ flex: 1, overflowY: "auto" as const, padding: "20px 28px" }}>
-                {currentEmail.html ? (
-                  <IframeEmail html={currentEmail.html} />
-                ) : (
-                  <pre style={{ whiteSpace: "pre-wrap", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif", fontSize: 14, color: "#334155", lineHeight: 1.75, margin: 0 }}>
-                    {currentEmail.text}
-                  </pre>
-                )}
+              {/* Email Body — scrollable readable canvas */}
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: "auto" as const,
+                  padding: "20px 24px",
+                  background: "#f8fafc",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  pointerEvents: isDragging ? "none" : "auto",
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: 960,
+                    background: "#ffffff",
+                    borderRadius: 12,
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 1px 4px rgba(15,23,42,0.05), 0 1px 2px rgba(15,23,42,0.02)",
+                    padding: "24px 28px",
+                    boxSizing: "border-box" as const,
+                    minHeight: "100%",
+                  }}
+                >
+                  {currentEmail.html ? (
+                    <IframeEmail html={currentEmail.html} />
+                  ) : (
+                    <pre
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
+                        fontSize: 14,
+                        color: "#334155",
+                        lineHeight: 1.8,
+                        margin: 0,
+                      }}
+                    >
+                      {currentEmail.text}
+                    </pre>
+                  )}
+                </div>
               </div>
 
-              {/* Reply Box — sticky bottom */}
-              <div style={{ borderTop: "1px solid #e2e8f0", background: "#f8fafc", padding: "16px 28px", flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <CornerDownLeft style={{ height: 14, width: 14, color: "#2563eb" }} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
-                    Reply to <span style={{ color: "#2563eb" }}>{currentEmail.fromName}</span>
-                  </span>
+              {/* Reply Box — Resizable sticky bottom bar */}
+              <div
+                style={{
+                  height: replyBoxHeight,
+                  background: "#ffffff",
+                  borderTop: "1px solid #e2e8f0",
+                  display: "flex",
+                  flexDirection: "column",
+                  flexShrink: 0,
+                  boxShadow: "0 -4px 16px rgba(15,23,42,0.05)",
+                  transition: isDragging ? "none" : "height 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+                  overflow: "hidden",
+                  position: "relative",
+                }}
+              >
+                {/* ── Top Border / Resize Handle ── */}
+                <div
+                  onMouseDown={handleMouseDownResize}
+                  onDoubleClick={handleDoubleClickBorder}
+                  title="Drag border to resize height • Double-click to expand or collapse"
+                  className="reply-resize-bar"
+                  style={{
+                    height: 12,
+                    width: "100%",
+                    cursor: "ns-resize",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#f8fafc",
+                    borderBottom: "1px solid #f1f5f9",
+                    flexShrink: 0,
+                    userSelect: "none" as const,
+                  }}
+                >
+                  <div
+                    className="reply-resize-pill"
+                    style={{
+                      width: 44,
+                      height: 4,
+                      borderRadius: 2,
+                      background: isDragging ? "#2563eb" : "#cbd5e1",
+                      transition: "background 0.15s, width 0.15s",
+                    }}
+                  />
                 </div>
-                <textarea
-                  rows={4}
-                  placeholder="Write your reply..."
-                  value={replyText}
-                  onChange={e => setReplyText(e.target.value)}
-                  style={{ width: "100%", padding: "12px 14px", fontSize: 13, color: "#1e293b", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, resize: "none", outline: "none", lineHeight: 1.65, boxSizing: "border-box" as const, fontFamily: "inherit" }}
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                  <button
-                    disabled={isReplying || !replyText.trim()}
-                    onClick={handleReply}
-                    style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 20px", fontSize: 13, fontWeight: 600, color: "#fff", background: "linear-gradient(135deg,#2563eb,#4f46e5)", border: "none", borderRadius: 9, cursor: isReplying || !replyText.trim() ? "not-allowed" : "pointer", opacity: isReplying || !replyText.trim() ? 0.5 : 1, boxShadow: "0 2px 8px rgba(79,70,229,0.25)" }}
+
+                {/* ── Box Content: Small Rectangle vs Expanded ── */}
+                {replyBoxHeight <= 75 ? (
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "0 18px",
+                      background: "#ffffff",
+                      boxSizing: "border-box" as const,
+                    }}
                   >
-                    {isReplying ? <RefreshCw style={{ height: 14, width: 14, animation: "spin 0.8s linear infinite" }} /> : <Send style={{ height: 14, width: 14 }} />}
-                    {isReplying ? "Sending..." : "Send Reply"}
-                  </button>
-                </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b", flexShrink: 0, fontSize: 12, fontWeight: 600 }}>
+                      <CornerDownLeft style={{ height: 14, width: 14, color: "#2563eb" }} />
+                      <span style={{ maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                        Reply to {currentEmail.fromName}
+                      </span>
+                    </div>
+
+                    <input
+                      ref={replyInputRef}
+                      type="text"
+                      placeholder="Write your reply... (double-click top border to expand)"
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" && !e.shiftKey && replyText.trim()) {
+                          e.preventDefault();
+                          handleReply();
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        height: 36,
+                        padding: "0 12px",
+                        fontSize: 13,
+                        color: "#1e293b",
+                        background: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 8,
+                        outline: "none",
+                        boxSizing: "border-box" as const,
+                      }}
+                    />
+
+                    <button
+                      disabled={isReplying || !replyText.trim()}
+                      onClick={handleReply}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        height: 36,
+                        padding: "0 16px",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#fff",
+                        background: "linear-gradient(135deg,#2563eb,#4f46e5)",
+                        border: "none",
+                        borderRadius: 8,
+                        cursor: isReplying || !replyText.trim() ? "not-allowed" : "pointer",
+                        opacity: isReplying || !replyText.trim() ? 0.5 : 1,
+                        flexShrink: 0,
+                        boxShadow: "0 2px 6px rgba(79,70,229,0.25)",
+                      }}
+                    >
+                      {isReplying ? <RefreshCw style={{ height: 13, width: 13, animation: "spin 0.8s linear infinite" }} /> : <Send style={{ height: 13, width: 13 }} />}
+                      <span>Send</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setReplyBoxHeight(220);
+                        setTimeout(() => replyTextareaRef.current?.focus(), 60);
+                      }}
+                      title="Expand reply box (or double-click border)"
+                      style={{
+                        height: 36,
+                        width: 36,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                        background: "#f8fafc",
+                        color: "#64748b",
+                        cursor: "pointer",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <ChevronUp style={{ height: 16, width: 16 }} />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      padding: "8px 22px 12px",
+                      background: "#ffffff",
+                      boxSizing: "border-box" as const,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {/* Subheader */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 8,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <CornerDownLeft style={{ height: 14, width: 14, color: "#2563eb" }} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                          Reply to <span style={{ color: "#2563eb" }}>{currentEmail.fromName}</span>
+                          <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 400, marginLeft: 6 }}>
+                            &lt;{currentEmail.fromAddress}&gt;
+                          </span>
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                          Double-click top border to collapse
+                        </span>
+                        <button
+                          onClick={() => setReplyBoxHeight(54)}
+                          title="Collapse to small box"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "4px 9px",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            color: "#64748b",
+                            background: "#f8fafc",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <ChevronDown style={{ height: 13, width: 13 }} />
+                          <span>Small box</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Textarea */}
+                    <textarea
+                      ref={replyTextareaRef}
+                      placeholder="Write your reply... (Press Ctrl+Enter to send)"
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && replyText.trim()) {
+                          e.preventDefault();
+                          handleReply();
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        width: "100%",
+                        padding: "10px 14px",
+                        fontSize: 13,
+                        color: "#1e293b",
+                        background: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 8,
+                        resize: "none",
+                        outline: "none",
+                        lineHeight: 1.6,
+                        boxSizing: "border-box" as const,
+                        fontFamily: "inherit",
+                      }}
+                    />
+
+                    {/* Footer */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginTop: 8,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                        Drag top border to resize height
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {replyText.trim() && (
+                          <button
+                            onClick={() => setReplyText("")}
+                            style={{
+                              padding: "6px 12px",
+                              fontSize: 12,
+                              color: "#64748b",
+                              background: "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Clear
+                          </button>
+                        )}
+                        <button
+                          disabled={isReplying || !replyText.trim()}
+                          onClick={handleReply}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "7px 18px",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#fff",
+                            background: "linear-gradient(135deg,#2563eb,#4f46e5)",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: isReplying || !replyText.trim() ? "not-allowed" : "pointer",
+                            opacity: isReplying || !replyText.trim() ? 0.5 : 1,
+                            boxShadow: "0 2px 6px rgba(79,70,229,0.25)",
+                          }}
+                        >
+                          {isReplying ? <RefreshCw style={{ height: 13, width: 13, animation: "spin 0.8s linear infinite" }} /> : <Send style={{ height: 13, width: 13 }} />}
+                          <span>{isReplying ? "Sending..." : "Send Reply"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -1179,7 +1564,16 @@ export default function MailCenterPage() {
         </div>
       )}
 
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .reply-resize-bar:hover {
+          background: #eff6ff !important;
+        }
+        .reply-resize-bar:hover .reply-resize-pill {
+          background: #2563eb !important;
+          width: 56px !important;
+        }
+      `}</style>
     </div>
   );
 }

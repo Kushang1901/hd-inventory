@@ -33,6 +33,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  Users,
 } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -64,14 +65,34 @@ interface EmailDetail {
   attachments?: Array<{ filename?: string; contentType: string; size: number }>;
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-function getInitials(name: string) {
-  if (!name) return "?";
-  const p = name.trim().split(/\s+/);
-  return p.length === 1
-    ? p[0][0].toUpperCase()
-    : (p[0][0] + p[p.length - 1][0]).toUpperCase();
+export interface MailContact {
+  name: string;
+  email: string;
+  source?: "recent" | "contact" | "inbox";
 }
+
+const SEED_CONTACTS: MailContact[] = [
+  { name: "Kushang Acharya", email: "kushangacharya8830@gmail.com", source: "recent" },
+  { name: "Hotel Devang", email: "devanghotel@gmail.com", source: "contact" },
+  { name: "Hotel Devang Info", email: "info@hoteldevang.com", source: "contact" },
+  { name: "Hotel Devang Reservations", email: "reservations@hoteldevang.com", source: "contact" },
+  { name: "Hotel Devang Support", email: "support@hoteldevang.com", source: "contact" },
+];
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+function getInitials(name?: string, email?: string) {
+  const cleanName = (name || "").trim();
+  if (cleanName && !cleanName.includes("@")) {
+    const p = cleanName.split(/\s+/);
+    return p.length === 1
+      ? p[0][0].toUpperCase()
+      : (p[0][0] + p[p.length - 1][0]).toUpperCase();
+  }
+  const cleanEmail = (email || cleanName || "").trim();
+  if (cleanEmail) return cleanEmail[0].toUpperCase();
+  return "?";
+}
+
 
 function getAvatarGradient(name: string) {
   const g = [
@@ -208,11 +229,52 @@ export default function MailCenterPage() {
   const [composeBody, setComposeBody] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [composeStatus, setComposeStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [guestResults, setGuestResults] = useState<any[]>([]);
-  const [searchingGuests, setSearchingGuests] = useState(false);
+
+  // ─── Contact Autocomplete States ───────────────────────────────────────────
+  const [contactSuggestions, setContactSuggestions] = useState<MailContact[]>([]);
+  const [showContactSuggestions, setShowContactSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [searchingContacts, setSearchingContacts] = useState(false);
+  const [recentContacts, setRecentContacts] = useState<MailContact[]>([]);
+
+  const toInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const composeSubjectRef = useRef<HTMLInputElement>(null);
+  const contactsDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load recent contacts from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("devang_mail_contacts");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setRecentContacts(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Close suggestions dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        toInputRef.current &&
+        !toInputRef.current.contains(e.target as Node)
+      ) {
+        setShowContactSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+
 
   // ─── Outgoing Attachments ──────────────────────────────────────────────────
   interface OutgoingAttachment {
@@ -552,15 +614,143 @@ export default function MailCenterPage() {
     }
   };
 
-  // ─── Guest search ────────────────────────────────────────────────────────────
-  const handleGuestSearch = async (val: string) => {
+  // ─── Contact Autocomplete & Suggestion Handlers ──────────────────────────
+  const getKnownContacts = useCallback((): MailContact[] => {
+    const map = new Map<string, MailContact>();
+
+    // 1. Default seed contacts
+    for (const c of SEED_CONTACTS) {
+      map.set(c.email.toLowerCase(), c);
+    }
+
+    // 2. Contacts harvested from loaded emails
+    for (const e of emails) {
+      if (e.fromAddress && e.fromAddress.includes("@")) {
+        const addr = e.fromAddress.toLowerCase().trim();
+        const existing = map.get(addr);
+        const name = (e.fromName || "").trim() || addr.split("@")[0];
+        if (!existing || (!existing.name && name)) {
+          map.set(addr, { name, email: addr, source: "inbox" });
+        }
+      }
+    }
+
+    // 3. Stored recent contacts (take precedence for recent ranking)
+    for (const c of recentContacts) {
+      if (c.email && c.email.includes("@")) {
+        map.set(c.email.toLowerCase().trim(), { ...c, source: "recent" });
+      }
+    }
+
+    return Array.from(map.values());
+  }, [emails, recentContacts]);
+
+  const filterContacts = useCallback((val: string) => {
+    const q = val.trim().toLowerCase();
+    const all = getKnownContacts();
+    if (!q) {
+      setContactSuggestions(all.slice(0, 8));
+      return;
+    }
+
+    const matches = all.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.email.toLowerCase().includes(q)
+    );
+
+    matches.sort((a, b) => {
+      const aEmailStart = a.email.toLowerCase().startsWith(q);
+      const bEmailStart = b.email.toLowerCase().startsWith(q);
+      if (aEmailStart && !bEmailStart) return -1;
+      if (!aEmailStart && bEmailStart) return 1;
+
+      const aNameStart = a.name.toLowerCase().startsWith(q);
+      const bNameStart = b.name.toLowerCase().startsWith(q);
+      if (aNameStart && !bNameStart) return -1;
+      if (!aNameStart && bNameStart) return 1;
+
+      return 0;
+    });
+
+    setContactSuggestions(matches);
+  }, [getKnownContacts]);
+
+  const handleToChange = (val: string) => {
     setComposeTo(val);
-    if (val.length < 2) { setGuestResults([]); return; }
-    setSearchingGuests(true);
+    setShowContactSuggestions(true);
+    setHighlightedIndex(0);
+
+    filterContacts(val);
+
+    if (contactsDebounceRef.current) clearTimeout(contactsDebounceRef.current);
+    contactsDebounceRef.current = setTimeout(async () => {
+      if (val.trim().length >= 1) {
+        setSearchingContacts(true);
+        try {
+          const r = await fetch(`/api/mail/contacts?q=${encodeURIComponent(val.trim())}`);
+          if (r.ok) {
+            const data = await r.json();
+            const serverContacts: MailContact[] = data.contacts || [];
+            if (serverContacts.length > 0) {
+              setContactSuggestions(prev => {
+                const map = new Map<string, MailContact>();
+                for (const c of prev) {
+                  map.set(c.email.toLowerCase().trim(), c);
+                }
+                for (const sc of serverContacts) {
+                  const key = sc.email.toLowerCase().trim();
+                  if (!map.has(key)) {
+                    map.set(key, sc);
+                  }
+                }
+                return Array.from(map.values());
+              });
+            }
+          }
+        } finally {
+          setSearchingContacts(false);
+        }
+      }
+    }, 150);
+  };
+
+  const saveRecentContact = (contact: MailContact) => {
     try {
-      const r = await fetch(`/api/mail/guests?q=${encodeURIComponent(val)}`);
-      if (r.ok) setGuestResults((await r.json()).guests || []);
-    } finally { setSearchingGuests(false); }
+      const updated = [
+        contact,
+        ...recentContacts.filter(c => c.email.toLowerCase() !== contact.email.toLowerCase())
+      ].slice(0, 40);
+      setRecentContacts(updated);
+      localStorage.setItem("devang_mail_contacts", JSON.stringify(updated));
+    } catch {}
+  };
+
+  const selectContact = (contact: MailContact) => {
+    setComposeTo(contact.email);
+    setShowContactSuggestions(false);
+    saveRecentContact(contact);
+    setTimeout(() => {
+      composeSubjectRef.current?.focus();
+    }, 50);
+  };
+
+  const handleToKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showContactSuggestions || contactSuggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev + 1) % contactSuggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev - 1 + contactSuggestions.length) % contactSuggestions.length);
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      if (contactSuggestions[highlightedIndex]) {
+        e.preventDefault();
+        selectContact(contactSuggestions[highlightedIndex]);
+      }
+    } else if (e.key === "Escape") {
+      setShowContactSuggestions(false);
+    }
   };
 
   // ─── Send ────────────────────────────────────────────────────────────────────
@@ -604,6 +794,13 @@ export default function MailCenterPage() {
       if (r.ok) {
         setComposeStatus({ type: "success", text: "Email sent successfully!" });
         setComposeAttachments([]);
+        if (composeTo.includes("@")) {
+          saveRecentContact({
+            name: composeTo.split("@")[0],
+            email: composeTo.trim(),
+            source: "recent",
+          });
+        }
         setTimeout(() => {
           setComposeOpen(false);
           setComposeTo("");
@@ -611,6 +808,7 @@ export default function MailCenterPage() {
           setComposeBody("");
           setComposeStatus(null);
           setActiveTemplate(null);
+          setShowContactSuggestions(false);
           if (folder === "sent") fetchEmails("sent");
         }, 1500);
       } else {
@@ -724,7 +922,16 @@ export default function MailCenterPage() {
             Refresh
           </button>
           <button
-            onClick={() => { setComposeOpen(true); setActiveTemplate(null); setComposeTo(""); setComposeSubject(""); setComposeBody(""); setComposeStatus(null); }}
+            onClick={() => {
+              setComposeOpen(true);
+              setActiveTemplate(null);
+              setComposeTo("");
+              setComposeSubject("");
+              setComposeBody("");
+              setComposeStatus(null);
+              setShowContactSuggestions(false);
+              setTimeout(() => toInputRef.current?.focus(), 80);
+            }}
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", fontSize: 12, fontWeight: 600, color: "#fff", background: "linear-gradient(135deg,#2563eb,#4f46e5)", border: "none", borderRadius: 8, cursor: "pointer", boxShadow: "0 2px 8px rgba(79,70,229,0.3)" }}
           >
             <Plus style={{ height: 14, width: 14 }} />
@@ -1526,28 +1733,116 @@ export default function MailCenterPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", borderBottom: "1px solid #f8fafc", position: "relative" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", width: 28, flexShrink: 0 }}>To</span>
                   <input
+                    ref={toInputRef}
                     type="text" required
-                    placeholder="Recipient email..."
+                    placeholder="Recipient email or name..."
                     value={composeTo}
-                    onChange={e => handleGuestSearch(e.target.value)}
+                    onChange={e => handleToChange(e.target.value)}
+                    onFocus={() => {
+                      filterContacts(composeTo);
+                      setShowContactSuggestions(true);
+                    }}
+                    onKeyDown={handleToKeyDown}
+                    autoComplete="off"
                     style={{ flex: 1, fontSize: 13, color: "#1e293b", background: "transparent", border: "none", outline: "none", fontFamily: "inherit" }}
                   />
-                  {searchingGuests && <RefreshCw style={{ height: 13, width: 13, color: "#94a3b8", animation: "spin 0.8s linear infinite" }} />}
-                  {guestResults.length > 0 && (
-                    <div style={{ position: "absolute", top: "100%", left: 60, right: 0, zIndex: 20, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", overflow: "hidden" }}>
-                      {guestResults.map(g => (
-                        <div key={g.id} onClick={() => { setComposeTo(g.name); setGuestResults([]); }}
-                          style={{ padding: "10px 16px", cursor: "pointer", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ fontWeight: 600, color: "#0f172a" }}>{g.name}</span>
-                          <span style={{ color: "#94a3b8" }}>{g.phone}</span>
-                        </div>
-                      ))}
+                  {searchingContacts && (
+                    <RefreshCw style={{ height: 13, width: 13, color: "#94a3b8", animation: "spin 0.8s linear infinite" }} />
+                  )}
+
+                  {/* Gmail-style Recipient Suggestions Dropdown */}
+                  {showContactSuggestions && contactSuggestions.length > 0 && (
+                    <div
+                      ref={suggestionsRef}
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 4px)",
+                        left: 48,
+                        right: 20,
+                        zIndex: 100,
+                        background: "#ffffff",
+                        borderRadius: 12,
+                        border: "1px solid #e2e8f0",
+                        boxShadow: "0 16px 36px -4px rgba(15, 23, 42, 0.14), 0 6px 16px -2px rgba(15, 23, 42, 0.08)",
+                        overflow: "hidden",
+                        maxHeight: 290,
+                        overflowY: "auto",
+                      }}
+                    >
+                      <div style={{ padding: "8px 14px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 5 }}>
+                          <Users style={{ height: 11, width: 11, color: "#2563eb" }} />
+                          Suggested Contacts
+                        </span>
+                        <span style={{ fontSize: 10, color: "#94a3b8" }}>
+                          ↑↓ to navigate · Enter to select
+                        </span>
+                      </div>
+                      <div style={{ padding: "4px 0" }}>
+                        {contactSuggestions.map((c, idx) => {
+                          const isSelected = idx === highlightedIndex;
+                          const gradient = getAvatarGradient(c.name || c.email);
+                          const initials = getInitials(c.name, c.email);
+                          return (
+                            <div
+                              key={`${c.email}-${idx}`}
+                              onClick={() => selectContact(c)}
+                              onMouseEnter={() => setHighlightedIndex(idx)}
+                              style={{
+                                padding: "9px 14px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                cursor: "pointer",
+                                background: isSelected ? "#eff6ff" : "transparent",
+                                borderLeft: isSelected ? "3px solid #2563eb" : "3px solid transparent",
+                                transition: "background 0.1s ease",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 34,
+                                  height: 34,
+                                  borderRadius: "50%",
+                                  background: gradient,
+                                  color: "#ffffff",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                  flexShrink: 0,
+                                  boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                                }}
+                              >
+                                {initials}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {c.name || c.email.split("@")[0]}
+                                </div>
+                                <div style={{ fontSize: 12, color: isSelected ? "#2563eb" : "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {c.email}
+                                </div>
+                              </div>
+                              {isSelected ? (
+                                <span style={{ fontSize: 10, fontWeight: 600, color: "#2563eb", background: "#dbeafe", padding: "2px 7px", borderRadius: 4 }}>
+                                  Select ↵
+                                </span>
+                              ) : (
+                                <Mail style={{ height: 13, width: 13, color: "#cbd5e1" }} />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", width: 28, flexShrink: 0 }}>Sub</span>
                   <input
+                    ref={composeSubjectRef}
                     type="text" required
                     placeholder="Subject..."
                     value={composeSubject}

@@ -1461,8 +1461,38 @@ export default function MailCenterPage() {
 
       {/* ═══ COMPOSE MODAL ══════════════════════════════════════════════════════ */}
       {composeOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "flex-end", background: "rgba(15,23,42,0.45)", backdropFilter: "blur(3px)", padding: 20 }}>
-          <div style={{ width: "100%", maxWidth: 640, background: "#fff", borderRadius: 16, boxShadow: "0 24px 64px rgba(0,0,0,0.2)", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", maxHeight: "90vh", overflow: "hidden" }}>
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setComposeOpen(false);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(15,23,42,0.55)",
+            backdropFilter: "blur(4px)",
+            padding: 24,
+            boxSizing: "border-box" as const,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 860,
+              height: "82vh",
+              maxHeight: 740,
+              background: "#ffffff",
+              borderRadius: 16,
+              boxShadow: "0 25px 70px rgba(15,23,42,0.28), 0 0 0 1px rgba(226,232,240,0.8)",
+              border: "1px solid #e2e8f0",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "linear-gradient(135deg,#0f172a,#1e3a8a)", borderRadius: "16px 16px 0 0" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

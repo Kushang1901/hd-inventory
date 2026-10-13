@@ -241,22 +241,80 @@ export async function getEmailDetail({
   }
 }
 
+export async function getEmailAttachment({
+  folder = "INBOX",
+  uid,
+  index,
+}: {
+  folder?: string;
+  uid: number;
+  index: number;
+}): Promise<{
+  content: Buffer;
+  contentType: string;
+  filename: string;
+  size: number;
+} | null> {
+  const client = getImapClient();
+  const folderPath = resolveFolderPath(folder);
+
+  await client.connect();
+  try {
+    const lock = await client.getMailboxLock(folderPath);
+    try {
+      const message = await client.fetchOne(
+        String(uid),
+        { source: true, uid: true },
+        { uid: true }
+      );
+
+      if (!message || !message.source) {
+        return null;
+      }
+
+      const parsed: ParsedMail = await simpleParser(message.source);
+      const atts = parsed.attachments || [];
+      if (!atts[index]) {
+        return null;
+      }
+
+      const att = atts[index];
+      return {
+        content: att.content,
+        contentType: att.contentType || "application/octet-stream",
+        filename: att.filename || `attachment-${index + 1}`,
+        size: att.size || att.content.length,
+      };
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout();
+  }
+}
+
 export async function sendEmail({
   to,
   subject,
   html,
   text,
   replyTo,
+  attachments,
 }: {
   to: string;
   subject: string;
   html: string;
   text?: string;
   replyTo?: string;
+  attachments?: Array<{
+    filename: string;
+    content: string | Buffer;
+    contentType?: string;
+  }>;
 }) {
   const transporter = getTransporter();
 
-  const mailOptions = {
+  const mailOptions: any = {
     from: `"Hotel Devang, Dwarka" <${HOSTINGER_CONFIG.user}>`,
     to,
     subject,
@@ -264,6 +322,16 @@ export async function sendEmail({
     text: text || html.replace(/<[^>]+>/g, " "),
     replyTo: replyTo || HOSTINGER_CONFIG.user,
   };
+
+  if (attachments && attachments.length > 0) {
+    mailOptions.attachments = attachments.map((att) => ({
+      filename: att.filename,
+      content: Buffer.isBuffer(att.content)
+        ? att.content
+        : Buffer.from(att.content, "base64"),
+      contentType: att.contentType,
+    }));
+  }
 
   const info = await transporter.sendMail(mailOptions);
 

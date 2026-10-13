@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { to, subject, html, text, replyTo } = body;
+    const { to, subject, html, text, replyTo, attachments } = body;
 
     if (!to || !to.trim()) {
       return NextResponse.json(
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       html: html || `<p>${text}</p>`,
       text,
       replyTo,
+      attachments,
     });
 
     return NextResponse.json({

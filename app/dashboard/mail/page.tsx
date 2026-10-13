@@ -30,6 +30,9 @@ import {
   CornerDownLeft,
   Maximize2,
   Minimize2,
+  Download,
+  ExternalLink,
+  FileText,
 } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -210,6 +213,76 @@ export default function MailCenterPage() {
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+
+  // ─── Outgoing Attachments ──────────────────────────────────────────────────
+  interface OutgoingAttachment {
+    name: string;
+    size: number;
+    type: string;
+    base64: string;
+  }
+  const [composeAttachments, setComposeAttachments] = useState<OutgoingAttachment[]>([]);
+  const [replyAttachments, setReplyAttachments] = useState<OutgoingAttachment[]>([]);
+  const composeFileInputRef = useRef<HTMLInputElement>(null);
+  const replyFileInputRef = useRef<HTMLInputElement>(null);
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const res = reader.result as string;
+        const b64 = res.split(",")[1] || "";
+        resolve(b64);
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleAddComposeFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    const items: OutgoingAttachment[] = [];
+    for (const f of files) {
+      if (f.size > 20 * 1024 * 1024) {
+        alert(`"${f.name}" exceeds the 20MB limit.`);
+        continue;
+      }
+      const b64 = await fileToBase64(f);
+      items.push({
+        name: f.name,
+        size: f.size,
+        type: f.type || "application/octet-stream",
+        base64: b64,
+      });
+    }
+    setComposeAttachments((prev) => [...prev, ...items]);
+    e.target.value = "";
+  };
+
+  const handleAddReplyFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    const items: OutgoingAttachment[] = [];
+    for (const f of files) {
+      if (f.size > 20 * 1024 * 1024) {
+        alert(`"${f.name}" exceeds the 20MB limit.`);
+        continue;
+      }
+      const b64 = await fileToBase64(f);
+      items.push({
+        name: f.name,
+        size: f.size,
+        type: f.type || "application/octet-stream",
+        base64: b64,
+      });
+    }
+    setReplyAttachments((prev) => [...prev, ...items]);
+    if (replyBoxHeight <= 75) {
+      setReplyBoxHeight(220);
+    }
+    e.target.value = "";
+  };
 
   // ─── Resizable & Double-clickable Reply Box ────────────────────────────────
   const [replyBoxHeight, setReplyBoxHeight] = useState(54); // Default small proper rectangle
@@ -510,20 +583,49 @@ export default function MailCenterPage() {
         +91 98244 02132 | info@hoteldevang.com
       </div>
     </div>`;
+    const payloadAttachments = composeAttachments.map((a) => ({
+      filename: a.name,
+      content: a.base64,
+      contentType: a.type,
+    }));
     try {
-      const r = await fetch("/api/mail/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: composeTo.trim(), subject: composeSubject.trim(), text: composeBody, html }) });
+      const r = await fetch("/api/mail/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: composeTo.trim(),
+          subject: composeSubject.trim(),
+          text: composeBody,
+          html,
+          attachments: payloadAttachments,
+        }),
+      });
       const d = await r.json();
       if (r.ok) {
         setComposeStatus({ type: "success", text: "Email sent successfully!" });
-        setTimeout(() => { setComposeOpen(false); setComposeTo(""); setComposeSubject(""); setComposeBody(""); setComposeStatus(null); setActiveTemplate(null); if (folder === "sent") fetchEmails("sent"); }, 1500);
-      } else { setComposeStatus({ type: "error", text: d.error || "Failed to send." }); }
-    } catch { setComposeStatus({ type: "error", text: "Network error." }); }
-    finally { setIsSending(false); }
+        setComposeAttachments([]);
+        setTimeout(() => {
+          setComposeOpen(false);
+          setComposeTo("");
+          setComposeSubject("");
+          setComposeBody("");
+          setComposeStatus(null);
+          setActiveTemplate(null);
+          if (folder === "sent") fetchEmails("sent");
+        }, 1500);
+      } else {
+        setComposeStatus({ type: "error", text: d.error || "Failed to send." });
+      }
+    } catch {
+      setComposeStatus({ type: "error", text: "Network error." });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // ─── Reply ───────────────────────────────────────────────────────────────────
   const handleReply = async () => {
-    if (!replyText.trim() || !currentEmail) return;
+    if ((!replyText.trim() && replyAttachments.length === 0) || !currentEmail) return;
     setIsReplying(true);
     try {
       const subj = currentEmail.subject.startsWith("Re:") ? currentEmail.subject : `Re: ${currentEmail.subject}`;
@@ -533,10 +635,32 @@ export default function MailCenterPage() {
         <p style="color:#64748b;font-size:12px;margin:0;">On ${new Date(currentEmail.date).toLocaleString()}, <strong>${currentEmail.fromName}</strong> wrote:</p>
         <blockquote style="margin:8px 0 0;padding:10px 14px;border-left:3px solid #cbd5e1;color:#475569;font-size:13px;">${(currentEmail.text || "").replace(/\n/g, "<br/>")}</blockquote>
       </div>`;
-      const r = await fetch("/api/mail/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: currentEmail.fromAddress, subject: subj, text: replyText, html }) });
-      if (r.ok) { alert("Reply sent!"); setReplyText(""); }
-      else alert("Failed to send reply.");
-    } finally { setIsReplying(false); }
+      const payloadAttachments = replyAttachments.map((a) => ({
+        filename: a.name,
+        content: a.base64,
+        contentType: a.type,
+      }));
+      const r = await fetch("/api/mail/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: currentEmail.fromAddress,
+          subject: subj,
+          text: replyText,
+          html,
+          attachments: payloadAttachments,
+        }),
+      });
+      if (r.ok) {
+        alert("Reply sent!");
+        setReplyText("");
+        setReplyAttachments([]);
+      } else {
+        alert("Failed to send reply.");
+      }
+    } finally {
+      setIsReplying(false);
+    }
   };
 
   // ─── Templates ───────────────────────────────────────────────────────────────
@@ -744,7 +868,7 @@ export default function MailCenterPage() {
         </div>
 
         {/* ── Reading Pane ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#f8fafc", position: "relative" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#ffffff", position: "relative" }}>
           {isDragging && (
             <div style={{ position: "fixed", inset: 0, zIndex: 99999, cursor: "ns-resize", userSelect: "none" }} />
           )}
@@ -831,43 +955,117 @@ export default function MailCenterPage() {
 
               {/* Attachments */}
               {currentEmail.attachments && currentEmail.attachments.length > 0 && (
-                <div style={{ padding: "8px 24px", background: "#f1f5f9", borderBottom: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap" as const, gap: 8, flexShrink: 0 }}>
-                  {currentEmail.attachments.map((a, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 12, color: "#334155" }}>
-                      <Paperclip style={{ height: 12, width: 12, color: "#94a3b8" }} />
-                      <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{a.filename || "Attachment"}</span>
-                      <span style={{ color: "#94a3b8" }}>({Math.round(a.size / 1024)} KB)</span>
-                    </div>
-                  ))}
+                <div
+                  style={{
+                    padding: "10px 28px",
+                    background: "#f8fafc",
+                    borderBottom: "1px solid #e2e8f0",
+                    display: "flex",
+                    flexWrap: "wrap" as const,
+                    alignItems: "center",
+                    gap: 10,
+                    flexShrink: 0,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginRight: 4 }}>
+                    <Paperclip style={{ height: 13, width: 13, color: "#2563eb" }} />
+                    <span>{currentEmail.attachments.length} {currentEmail.attachments.length === 1 ? "Attachment" : "Attachments"}:</span>
+                  </div>
+                  {currentEmail.attachments.map((a, i) => {
+                    const downloadUrl = `/api/mail/${currentEmail.uid}/attachment?folder=${encodeURIComponent(folder)}&index=${i}&download=1`;
+                    const viewUrl = `/api/mail/${currentEmail.uid}/attachment?folder=${encodeURIComponent(folder)}&index=${i}`;
+                    const fileName = a.filename || `Attachment ${i + 1}`;
+                    const sizeStr = a.size ? `${Math.round(a.size / 1024)} KB` : "";
+
+                    return (
+                      <div
+                        key={i}
+                        className="email-attachment-chip"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "6px 12px",
+                          background: "#ffffff",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 8,
+                          fontSize: 12.5,
+                          color: "#1e293b",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <a
+                          href={viewUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={`Click to view / open ${fileName}`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            textDecoration: "none",
+                            color: "#1e293b",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <FileText style={{ height: 14, width: 14, color: "#2563eb", flexShrink: 0 }} />
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              maxWidth: 180,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap" as const,
+                            }}
+                          >
+                            {fileName}
+                          </span>
+                          {sizeStr && (
+                            <span style={{ fontSize: 11, color: "#64748b", fontWeight: 400 }}>
+                              ({sizeStr})
+                            </span>
+                          )}
+                          <ExternalLink style={{ height: 12, width: 12, color: "#94a3b8", marginLeft: 2 }} />
+                        </a>
+
+                        <div style={{ width: 1, height: 14, background: "#e2e8f0" }} />
+
+                        <a
+                          href={downloadUrl}
+                          download={fileName}
+                          title={`Download ${fileName}`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            color: "#64748b",
+                            padding: "2px 4px",
+                            borderRadius: 4,
+                            cursor: "pointer",
+                            textDecoration: "none",
+                          }}
+                        >
+                          <Download style={{ height: 13, width: 13 }} />
+                        </a>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
-              {/* Email Body — scrollable readable canvas */}
+              {/* Email Body — Seamless full-width readable canvas */}
               <div
                 style={{
                   flex: 1,
                   overflowY: "auto" as const,
-                  padding: "20px 24px",
-                  background: "#f8fafc",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
+                  padding: "28px 36px 36px",
+                  background: "#ffffff",
                   pointerEvents: isDragging ? "none" : "auto",
+                  width: "100%",
+                  boxSizing: "border-box" as const,
                 }}
               >
-                <div
-                  style={{
-                    width: "100%",
-                    maxWidth: 960,
-                    background: "#ffffff",
-                    borderRadius: 12,
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 1px 4px rgba(15,23,42,0.05), 0 1px 2px rgba(15,23,42,0.02)",
-                    padding: "24px 28px",
-                    boxSizing: "border-box" as const,
-                    minHeight: "100%",
-                  }}
-                >
+                <div style={{ maxWidth: 960, margin: "0 auto", width: "100%" }}>
                   {currentEmail.html ? (
                     <IframeEmail html={currentEmail.html} />
                   ) : (
@@ -875,8 +1073,8 @@ export default function MailCenterPage() {
                       style={{
                         whiteSpace: "pre-wrap",
                         fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
-                        fontSize: 14,
-                        color: "#334155",
+                        fontSize: 14.5,
+                        color: "#1e293b",
                         lineHeight: 1.8,
                         margin: 0,
                       }}
@@ -933,6 +1131,15 @@ export default function MailCenterPage() {
                   />
                 </div>
 
+                {/* Hidden Reply Attachment Input */}
+                <input
+                  type="file"
+                  multiple
+                  ref={replyFileInputRef}
+                  onChange={handleAddReplyFiles}
+                  style={{ display: "none" }}
+                />
+
                 {/* ── Box Content: Small Rectangle vs Expanded ── */}
                 {replyBoxHeight <= 75 ? (
                   <div
@@ -940,7 +1147,7 @@ export default function MailCenterPage() {
                       flex: 1,
                       display: "flex",
                       alignItems: "center",
-                      gap: 10,
+                      gap: 8,
                       padding: "0 18px",
                       background: "#ffffff",
                       boxSizing: "border-box" as const,
@@ -948,7 +1155,7 @@ export default function MailCenterPage() {
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b", flexShrink: 0, fontSize: 12, fontWeight: 600 }}>
                       <CornerDownLeft style={{ height: 14, width: 14, color: "#2563eb" }} />
-                      <span style={{ maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                      <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                         Reply to {currentEmail.fromName}
                       </span>
                     </div>
@@ -956,11 +1163,11 @@ export default function MailCenterPage() {
                     <input
                       ref={replyInputRef}
                       type="text"
-                      placeholder="Write your reply... (double-click top border to expand)"
+                      placeholder={`Write your reply... ${replyAttachments.length > 0 ? `(${replyAttachments.length} file attached)` : "(double-click border to expand)"}`}
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
                       onKeyDown={e => {
-                        if (e.key === "Enter" && !e.shiftKey && replyText.trim()) {
+                        if (e.key === "Enter" && !e.shiftKey && (replyText.trim() || replyAttachments.length > 0)) {
                           e.preventDefault();
                           handleReply();
                         }
@@ -980,7 +1187,31 @@ export default function MailCenterPage() {
                     />
 
                     <button
-                      disabled={isReplying || !replyText.trim()}
+                      type="button"
+                      onClick={() => replyFileInputRef.current?.click()}
+                      title="Attach file"
+                      style={{
+                        height: 36,
+                        padding: "0 10px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                        background: replyAttachments.length > 0 ? "#eff6ff" : "#f8fafc",
+                        color: replyAttachments.length > 0 ? "#2563eb" : "#64748b",
+                        cursor: "pointer",
+                        flexShrink: 0,
+                        fontSize: 12,
+                        fontWeight: 500,
+                      }}
+                    >
+                      <Paperclip style={{ height: 14, width: 14 }} />
+                      {replyAttachments.length > 0 && <span>{replyAttachments.length}</span>}
+                    </button>
+
+                    <button
+                      disabled={isReplying || (!replyText.trim() && replyAttachments.length === 0)}
                       onClick={handleReply}
                       style={{
                         display: "flex",
@@ -994,8 +1225,8 @@ export default function MailCenterPage() {
                         background: "linear-gradient(135deg,#2563eb,#4f46e5)",
                         border: "none",
                         borderRadius: 8,
-                        cursor: isReplying || !replyText.trim() ? "not-allowed" : "pointer",
-                        opacity: isReplying || !replyText.trim() ? 0.5 : 1,
+                        cursor: isReplying || (!replyText.trim() && replyAttachments.length === 0) ? "not-allowed" : "pointer",
+                        opacity: isReplying || (!replyText.trim() && replyAttachments.length === 0) ? 0.5 : 1,
                         flexShrink: 0,
                         boxShadow: "0 2px 6px rgba(79,70,229,0.25)",
                       }}
@@ -1045,7 +1276,7 @@ export default function MailCenterPage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        marginBottom: 8,
+                        marginBottom: 6,
                         flexShrink: 0,
                       }}
                     >
@@ -1092,7 +1323,7 @@ export default function MailCenterPage() {
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
                       onKeyDown={e => {
-                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && replyText.trim()) {
+                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && (replyText.trim() || replyAttachments.length > 0)) {
                           e.preventDefault();
                           handleReply();
                         }
@@ -1114,6 +1345,41 @@ export default function MailCenterPage() {
                       }}
                     />
 
+                    {/* Reply Attachments Chips */}
+                    {replyAttachments.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "6px 0 2px", maxHeight: 54, overflowY: "auto", flexShrink: 0 }}>
+                        {replyAttachments.map((att, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              background: "#eff6ff",
+                              border: "1px solid #bfdbfe",
+                              borderRadius: 6,
+                              padding: "2px 8px",
+                              fontSize: 11,
+                              color: "#1e293b",
+                            }}
+                          >
+                            <Paperclip style={{ height: 11, width: 11, color: "#2563eb" }} />
+                            <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                              {att.name}
+                            </span>
+                            <span style={{ color: "#64748b" }}>({Math.round(att.size / 1024)} KB)</span>
+                            <button
+                              type="button"
+                              onClick={() => setReplyAttachments(prev => prev.filter((_, i) => i !== idx))}
+                              style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, color: "#64748b", display: "flex" }}
+                            >
+                              <X style={{ height: 12, width: 12 }} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Footer */}
                     <div
                       style={{
@@ -1124,9 +1390,27 @@ export default function MailCenterPage() {
                         flexShrink: 0,
                       }}
                     >
-                      <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                        Drag top border to resize height
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => replyFileInputRef.current?.click()}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 5,
+                          padding: "6px 12px",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          color: "#2563eb",
+                          background: "#eff6ff",
+                          border: "1px solid #bfdbfe",
+                          borderRadius: 7,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Paperclip style={{ height: 13, width: 13 }} />
+                        <span>Attach File {replyAttachments.length > 0 ? `(${replyAttachments.length})` : ""}</span>
+                      </button>
+
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {replyText.trim() && (
                           <button
@@ -1144,7 +1428,7 @@ export default function MailCenterPage() {
                           </button>
                         )}
                         <button
-                          disabled={isReplying || !replyText.trim()}
+                          disabled={isReplying || (!replyText.trim() && replyAttachments.length === 0)}
                           onClick={handleReply}
                           style={{
                             display: "flex",
@@ -1157,8 +1441,8 @@ export default function MailCenterPage() {
                             background: "linear-gradient(135deg,#2563eb,#4f46e5)",
                             border: "none",
                             borderRadius: 8,
-                            cursor: isReplying || !replyText.trim() ? "not-allowed" : "pointer",
-                            opacity: isReplying || !replyText.trim() ? 0.5 : 1,
+                            cursor: isReplying || (!replyText.trim() && replyAttachments.length === 0) ? "not-allowed" : "pointer",
+                            opacity: isReplying || (!replyText.trim() && replyAttachments.length === 0) ? 0.5 : 1,
                             boxShadow: "0 2px 6px rgba(79,70,229,0.25)",
                           }}
                         >
@@ -1258,10 +1542,74 @@ export default function MailCenterPage() {
                 </div>
               )}
 
+              {/* Hidden Compose Attachment Input */}
+              <input
+                type="file"
+                multiple
+                ref={composeFileInputRef}
+                onChange={handleAddComposeFiles}
+                style={{ display: "none" }}
+              />
+
+              {/* Compose Attachment Chips */}
+              {composeAttachments.length > 0 && (
+                <div style={{ padding: "8px 20px", background: "#f8fafc", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap" as const, gap: 8, maxHeight: 72, overflowY: "auto" }}>
+                  {composeAttachments.map((att, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 8,
+                        padding: "4px 10px",
+                        fontSize: 12,
+                        color: "#1e293b",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                      }}
+                    >
+                      <Paperclip style={{ height: 13, width: 13, color: "#2563eb" }} />
+                      <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                        {att.name}
+                      </span>
+                      <span style={{ color: "#94a3b8", fontSize: 11 }}>({Math.round(att.size / 1024)} KB)</span>
+                      <button
+                        type="button"
+                        onClick={() => setComposeAttachments(prev => prev.filter((_, i) => i !== idx))}
+                        style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, color: "#94a3b8", display: "flex" }}
+                      >
+                        <X style={{ height: 13, width: 13 }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div style={{ padding: "12px 20px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: "0 0 16px 16px" }}>
-                <span style={{ fontSize: 11, color: "#94a3b8" }}>Sent via Hotel Devang Mail</span>
+                <button
+                  type="button"
+                  onClick={() => composeFileInputRef.current?.click()}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 14px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#2563eb",
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Paperclip style={{ height: 14, width: 14 }} />
+                  <span>Attach Files {composeAttachments.length > 0 ? `(${composeAttachments.length})` : ""}</span>
+                </button>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button type="button" onClick={() => setComposeOpen(false)}
+                  <button type="button" onClick={() => { setComposeOpen(false); setComposeAttachments([]); }}
                     style={{ padding: "8px 16px", fontSize: 12, fontWeight: 500, color: "#64748b", background: "#f1f5f9", border: "none", borderRadius: 8, cursor: "pointer" }}>
                     Discard
                   </button>
@@ -1488,37 +1836,94 @@ export default function MailCenterPage() {
             {currentEmail.attachments && currentEmail.attachments.length > 0 && (
               <div
                 style={{
-                  padding: "8px 24px",
-                  background: "#f1f5f9",
+                  padding: "10px 24px",
+                  background: "#f8fafc",
                   borderBottom: "1px solid #e2e8f0",
                   display: "flex",
                   flexWrap: "wrap" as const,
-                  gap: 8,
+                  gap: 10,
+                  alignItems: "center",
                   flexShrink: 0,
                 }}
               >
-                {currentEmail.attachments.map((a, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "5px 12px",
-                      background: "#fff",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 8,
-                      fontSize: 12,
-                      color: "#334155",
-                    }}
-                  >
-                    <Paperclip style={{ height: 12, width: 12, color: "#94a3b8" }} />
-                    <span style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
-                      {a.filename || "Attachment"}
-                    </span>
-                    <span style={{ color: "#94a3b8" }}>({Math.round(a.size / 1024)} KB)</span>
-                  </div>
-                ))}
+                {currentEmail.attachments.map((a, i) => {
+                  const downloadUrl = `/api/mail/${currentEmail.uid}/attachment?folder=${encodeURIComponent(folder)}&index=${i}&download=1`;
+                  const viewUrl = `/api/mail/${currentEmail.uid}/attachment?folder=${encodeURIComponent(folder)}&index=${i}`;
+                  const fileName = a.filename || `Attachment ${i + 1}`;
+                  const sizeStr = a.size ? `${Math.round(a.size / 1024)} KB` : "";
+
+                  return (
+                    <div
+                      key={i}
+                      className="email-attachment-chip"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "6px 12px",
+                        background: "#ffffff",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 8,
+                        fontSize: 12.5,
+                        color: "#1e293b",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                      }}
+                    >
+                      <a
+                        href={viewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`Click to view / open ${fileName}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          textDecoration: "none",
+                          color: "#1e293b",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <FileText style={{ height: 14, width: 14, color: "#2563eb", flexShrink: 0 }} />
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            maxWidth: 220,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap" as const,
+                          }}
+                        >
+                          {fileName}
+                        </span>
+                        {sizeStr && (
+                          <span style={{ fontSize: 11, color: "#64748b", fontWeight: 400 }}>
+                            ({sizeStr})
+                          </span>
+                        )}
+                        <ExternalLink style={{ height: 12, width: 12, color: "#94a3b8", marginLeft: 2 }} />
+                      </a>
+
+                      <div style={{ width: 1, height: 14, background: "#e2e8f0" }} />
+
+                      <a
+                        href={downloadUrl}
+                        download={fileName}
+                        title={`Download ${fileName}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          color: "#64748b",
+                          padding: "2px 4px",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          textDecoration: "none",
+                        }}
+                      >
+                        <Download style={{ height: 13, width: 13 }} />
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -1527,30 +1932,20 @@ export default function MailCenterPage() {
               style={{
                 flex: 1,
                 overflowY: "auto" as const,
-                padding: "24px 32px",
-                background: "#f8fafc",
+                padding: "28px 36px",
+                background: "#ffffff",
               }}
             >
-              <div
-                style={{
-                  maxWidth: 960,
-                  margin: "0 auto",
-                  background: "#ffffff",
-                  borderRadius: 12,
-                  border: "1px solid #e2e8f0",
-                  padding: "24px 28px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                }}
-              >
+              <div style={{ maxWidth: 960, margin: "0 auto", width: "100%" }}>
                 {currentEmail.html ? (
                   <IframeEmail html={currentEmail.html} />
                 ) : (
                   <pre
                     style={{
                       whiteSpace: "pre-wrap",
-                      fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif",
-                      fontSize: 14,
-                      color: "#334155",
+                      fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
+                      fontSize: 14.5,
+                      color: "#1e293b",
                       lineHeight: 1.8,
                       margin: 0,
                     }}

@@ -63,16 +63,18 @@ export async function GET(req: NextRequest) {
 
     const uniqueList = Array.from(map.values());
 
-    const filtered = q
-      ? uniqueList.filter((c) => {
-          return (
-            c.name.toLowerCase().includes(q) ||
-            c.email.toLowerCase().includes(q)
-          );
-        })
-      : uniqueList.slice(0, 15);
+    if (!q) {
+      return NextResponse.json({ contacts: [] });
+    }
 
-    return NextResponse.json({ contacts: filtered });
+    const filtered = uniqueList.filter((c) => {
+      return (
+        c.name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q)
+      );
+    });
+
+    return NextResponse.json({ contacts: filtered.slice(0, 15) });
   } catch (err: any) {
     console.error("Error in /api/mail/contacts:", err);
     return NextResponse.json({ contacts: [] });

@@ -437,35 +437,25 @@ let lastContactsFetchTime = 0;
 
 export async function getRecentContacts(): Promise<ContactSuggestion[]> {
   const now = Date.now();
-  // Return cached contacts if fetched within 3 minutes
-  if (cachedContacts.length > 0 && now - lastContactsFetchTime < 180000) {
+  // Return cached contacts if fetched within 2 minutes
+  if (cachedContacts.length > 0 && now - lastContactsFetchTime < 120000) {
     return cachedContacts;
   }
 
   const contactsMap = new Map<string, string>();
 
-  // Default seed contacts
-  contactsMap.set("kushangacharya8830@gmail.com", "Kushang Acharya");
-  if (HOSTINGER_CONFIG.user) {
-    contactsMap.set(HOSTINGER_CONFIG.user.toLowerCase(), "Hotel Devang");
-  }
-  contactsMap.set("devanghotel@gmail.com", "Devang Hotel");
-  contactsMap.set("info@hoteldevang.com", "Hotel Devang Info");
-  contactsMap.set("reservations@hoteldevang.com", "Hotel Devang Reservations");
-  contactsMap.set("support@hoteldevang.com", "Hotel Devang Support");
-
   const client = getImapClient();
   try {
     await client.connect();
 
-    // Scan recent messages from both INBOX and INBOX.Sent
+    // Dynamically scan messages from both INBOX and INBOX.Sent
     for (const folder of ["INBOX", "INBOX.Sent"]) {
       try {
         const lock = await client.getMailboxLock(folder);
         try {
           const total = client.mailbox ? client.mailbox.exists : 0;
           if (total > 0) {
-            const startSeq = Math.max(1, total - 50 + 1);
+            const startSeq = Math.max(1, total - 60 + 1);
             const seqRange = `${startSeq}:${total}`;
             for await (const msg of client.fetch(seqRange, { envelope: true })) {
               const env = msg.envelope;
@@ -475,7 +465,7 @@ export async function getRecentContacts(): Promise<ContactSuggestion[]> {
                   if (f.address && f.address.includes("@")) {
                     const addr = f.address.toLowerCase().trim();
                     const name = (f.name || "").trim() || addr.split("@")[0];
-                    if (!contactsMap.has(addr) || contactsMap.get(addr) === addr.split("@")[0]) {
+                    if (!contactsMap.has(addr) || (contactsMap.get(addr) === addr.split("@")[0] && name !== addr.split("@")[0])) {
                       contactsMap.set(addr, name);
                     }
                   }
@@ -487,7 +477,19 @@ export async function getRecentContacts(): Promise<ContactSuggestion[]> {
                   if (t.address && t.address.includes("@")) {
                     const addr = t.address.toLowerCase().trim();
                     const name = (t.name || "").trim() || addr.split("@")[0];
-                    if (!contactsMap.has(addr) || contactsMap.get(addr) === addr.split("@")[0]) {
+                    if (!contactsMap.has(addr) || (contactsMap.get(addr) === addr.split("@")[0] && name !== addr.split("@")[0])) {
+                      contactsMap.set(addr, name);
+                    }
+                  }
+                }
+              }
+              // Extract replyTo
+              if (env?.replyTo && Array.isArray(env.replyTo)) {
+                for (const r of env.replyTo) {
+                  if (r.address && r.address.includes("@")) {
+                    const addr = r.address.toLowerCase().trim();
+                    const name = (r.name || "").trim() || addr.split("@")[0];
+                    if (!contactsMap.has(addr)) {
                       contactsMap.set(addr, name);
                     }
                   }
@@ -498,8 +500,8 @@ export async function getRecentContacts(): Promise<ContactSuggestion[]> {
         } finally {
           lock.release();
         }
-      } catch (fErr) {
-        // Individual folder lock or scan issue can be safely skipped
+      } catch {
+        // Continue if folder cannot be locked
       }
     }
   } catch (err) {
@@ -519,4 +521,5 @@ export async function getRecentContacts(): Promise<ContactSuggestion[]> {
   lastContactsFetchTime = now;
   return result;
 }
+
 

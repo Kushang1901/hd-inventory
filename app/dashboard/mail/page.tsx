@@ -71,14 +71,6 @@ export interface MailContact {
   source?: "recent" | "contact" | "inbox";
 }
 
-const SEED_CONTACTS: MailContact[] = [
-  { name: "Kushang Acharya", email: "kushangacharya8830@gmail.com", source: "recent" },
-  { name: "Hotel Devang", email: "devanghotel@gmail.com", source: "contact" },
-  { name: "Hotel Devang Info", email: "info@hoteldevang.com", source: "contact" },
-  { name: "Hotel Devang Reservations", email: "reservations@hoteldevang.com", source: "contact" },
-  { name: "Hotel Devang Support", email: "support@hoteldevang.com", source: "contact" },
-];
-
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function getInitials(name?: string, email?: string) {
   const cleanName = (name || "").trim();
@@ -618,24 +610,31 @@ export default function MailCenterPage() {
   const getKnownContacts = useCallback((): MailContact[] => {
     const map = new Map<string, MailContact>();
 
-    // 1. Default seed contacts
-    for (const c of SEED_CONTACTS) {
-      map.set(c.email.toLowerCase(), c);
-    }
-
-    // 2. Contacts harvested from loaded emails
+    // 1. Contacts harvested dynamically from loaded mailbox emails
     for (const e of emails) {
       if (e.fromAddress && e.fromAddress.includes("@")) {
         const addr = e.fromAddress.toLowerCase().trim();
-        const existing = map.get(addr);
         const name = (e.fromName || "").trim() || addr.split("@")[0];
-        if (!existing || (!existing.name && name)) {
+        if (!map.has(addr) || (map.get(addr)?.name === addr.split("@")[0] && name !== addr.split("@")[0])) {
           map.set(addr, { name, email: addr, source: "inbox" });
+        }
+      }
+      if (e.to && e.to.includes("@")) {
+        const recipients = e.to.split(",");
+        for (const r of recipients) {
+          const match = r.match(/<([^>]+)>/) || [null, r.trim()];
+          const cleanEmail = (match[1] || r).trim().toLowerCase();
+          if (cleanEmail.includes("@")) {
+            const cleanName = r.replace(/<[^>]+>/, "").trim() || cleanEmail.split("@")[0];
+            if (!map.has(cleanEmail)) {
+              map.set(cleanEmail, { name: cleanName, email: cleanEmail, source: "inbox" });
+            }
+          }
         }
       }
     }
 
-    // 3. Stored recent contacts (take precedence for recent ranking)
+    // 2. Stored dynamically from real sent emails
     for (const c of recentContacts) {
       if (c.email && c.email.includes("@")) {
         map.set(c.email.toLowerCase().trim(), { ...c, source: "recent" });
@@ -647,12 +646,13 @@ export default function MailCenterPage() {
 
   const filterContacts = useCallback((val: string) => {
     const q = val.trim().toLowerCase();
-    const all = getKnownContacts();
     if (!q) {
-      setContactSuggestions(all.slice(0, 8));
+      setContactSuggestions([]);
+      setShowContactSuggestions(false);
       return;
     }
 
+    const all = getKnownContacts();
     const matches = all.filter(c =>
       c.name.toLowerCase().includes(q) ||
       c.email.toLowerCase().includes(q)
@@ -673,15 +673,26 @@ export default function MailCenterPage() {
     });
 
     setContactSuggestions(matches);
+    if (matches.length > 0) {
+      setShowContactSuggestions(true);
+    }
   }, [getKnownContacts]);
 
   const handleToChange = (val: string) => {
     setComposeTo(val);
-    setShowContactSuggestions(true);
-    setHighlightedIndex(0);
+    const q = val.trim().toLowerCase();
 
+    if (!q) {
+      setShowContactSuggestions(false);
+      setContactSuggestions([]);
+      if (contactsDebounceRef.current) clearTimeout(contactsDebounceRef.current);
+      return;
+    }
+
+    setHighlightedIndex(0);
     filterContacts(val);
 
+    // Fetch dynamic matches from IMAP mailbox
     if (contactsDebounceRef.current) clearTimeout(contactsDebounceRef.current);
     contactsDebounceRef.current = setTimeout(async () => {
       if (val.trim().length >= 1) {
@@ -705,13 +716,14 @@ export default function MailCenterPage() {
                 }
                 return Array.from(map.values());
               });
+              setShowContactSuggestions(true);
             }
           }
         } finally {
           setSearchingContacts(false);
         }
       }
-    }, 150);
+    }, 120);
   };
 
   const saveRecentContact = (contact: MailContact) => {
@@ -1739,8 +1751,11 @@ export default function MailCenterPage() {
                     value={composeTo}
                     onChange={e => handleToChange(e.target.value)}
                     onFocus={() => {
-                      filterContacts(composeTo);
-                      setShowContactSuggestions(true);
+                      if (composeTo.trim()) {
+                        filterContacts(composeTo);
+                      } else {
+                        setShowContactSuggestions(false);
+                      }
                     }}
                     onKeyDown={handleToKeyDown}
                     autoComplete="off"

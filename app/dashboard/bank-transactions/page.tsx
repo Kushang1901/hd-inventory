@@ -84,22 +84,10 @@ export default function BankTransactionsPage() {
   // Selected Transaction for Detail Modal
   const [selectedTxn, setSelectedTxn] = useState<BankTransaction | null>(null);
 
-  // Quick Record Modal (In-Memory Session Storage)
-  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
-  const [quickForm, setQuickForm] = useState({
-    type: "CREDIT" as "CREDIT" | "DEBIT",
-    amount: "",
-    partyName: "",
-    utr: "",
-    mode: "UPI" as BankTransaction["mode"],
-    status: "PENDING_VERIFICATION" as "REFLECTED" | "PENDING_VERIFICATION",
-    notes: "",
-  });
-
   // Copied UTR feedback
   const [copiedUtr, setCopiedUtr] = useState<string | null>(null);
 
-  // Fetch Live Data (In-Memory from HDFC Alert Emails)
+  // Fetch Live Data (In-Memory from Bank Alert Stream)
   const fetchTransactions = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
@@ -115,47 +103,8 @@ export default function BankTransactionsPage() {
 
       if (resData.success) {
         const liveTxns: BankTransaction[] = resData.data.transactions || [];
-        
-        // Merge with any session-stored manual pending entries from localStorage if present
-        const sessionManual = getSessionTransactions();
-        const merged = [...sessionManual, ...liveTxns];
-        // Deduplicate by UTR / id
-        const uniqueMap = new Map<string, BankTransaction>();
-        merged.forEach((t) => {
-          const key = t.utr ? t.utr.toLowerCase() : t.id;
-          if (!uniqueMap.has(key)) {
-            uniqueMap.set(key, t);
-          }
-        });
-
-        const finalTxns = Array.from(uniqueMap.values()).sort((a, b) => b.timestamp - a.timestamp);
-        setTransactions(finalTxns);
-
-        // Recompute summary
-        let inflow = 0;
-        let outflow = 0;
-        let cCount = 0;
-        let dCount = 0;
-        finalTxns.forEach((t) => {
-          if (t.type === "CREDIT") {
-            inflow += t.amount;
-            cCount++;
-          } else {
-            outflow += t.amount;
-            dCount++;
-          }
-        });
-
-        setSummary({
-          ...resData.data.summary,
-          totalInflow: inflow,
-          totalOutflow: outflow,
-          netPosition: inflow - outflow,
-          totalCount: finalTxns.length,
-          creditCount: cCount,
-          debitCount: dCount,
-          lastSyncedAt: new Date().toISOString(),
-        });
+        setTransactions(liveTxns);
+        setSummary(resData.data.summary);
       } else {
         throw new Error(resData.error || "Server could not retrieve bank data");
       }
@@ -171,83 +120,11 @@ export default function BankTransactionsPage() {
     fetchTransactions();
   }, []);
 
-  // Session storage helpers for manual pending transactions
-  const getSessionTransactions = (): BankTransaction[] => {
-    if (typeof window === "undefined") return [];
-    try {
-      const saved = sessionStorage.getItem("devang_manual_bank_txns");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const saveSessionTransaction = (txn: BankTransaction) => {
-    if (typeof window === "undefined") return;
-    try {
-      const current = getSessionTransactions();
-      const updated = [txn, ...current];
-      sessionStorage.setItem("devang_manual_bank_txns", JSON.stringify(updated));
-    } catch {}
-  };
-
   const handleCopyUtr = (utr: string) => {
     if (!utr) return;
     navigator.clipboard.writeText(utr);
     setCopiedUtr(utr);
     setTimeout(() => setCopiedUtr(null), 2000);
-  };
-
-  const handleCreateQuickTxn = (e: React.FormEvent) => {
-    e.preventDefault();
-    const amt = parseFloat(quickForm.amount);
-    if (isNaN(amt) || amt <= 0) {
-      alert("Please enter a valid amount");
-      return;
-    }
-
-    const now = new Date();
-    const newTxn: BankTransaction = {
-      id: `manual_${Date.now()}`,
-      type: quickForm.type,
-      amount: amt,
-      date: now.toISOString(),
-      time: now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }),
-      timestamp: now.getTime(),
-      partyName: quickForm.partyName.trim() || (quickForm.type === "CREDIT" ? "Counter Guest" : "Hotel Expense"),
-      mode: quickForm.mode,
-      utr: quickForm.utr.trim() || `MANUAL-${Math.floor(100000 + Math.random() * 900000)}`,
-      accountNumber: summary.accountNumber,
-      balanceAfter: null,
-      description: quickForm.notes.trim() || `${quickForm.type === "CREDIT" ? "Received from" : "Paid to"} ${quickForm.partyName}`,
-      rawSubject: "Manual Counter Entry",
-      status: quickForm.status,
-    };
-
-    saveSessionTransaction(newTxn);
-    setTransactions((prev) => [newTxn, ...prev]);
-
-    // Update summary counts
-    setSummary((prev) => ({
-      ...prev,
-      totalInflow: quickForm.type === "CREDIT" ? prev.totalInflow + amt : prev.totalInflow,
-      totalOutflow: quickForm.type === "DEBIT" ? prev.totalOutflow + amt : prev.totalOutflow,
-      netPosition: quickForm.type === "CREDIT" ? prev.netPosition + amt : prev.netPosition - amt,
-      totalCount: prev.totalCount + 1,
-      creditCount: quickForm.type === "CREDIT" ? prev.creditCount + 1 : prev.creditCount,
-      debitCount: quickForm.type === "DEBIT" ? prev.debitCount + 1 : prev.debitCount,
-    }));
-
-    setIsRecordModalOpen(false);
-    setQuickForm({
-      type: "CREDIT",
-      amount: "",
-      partyName: "",
-      utr: "",
-      mode: "UPI",
-      status: "PENDING_VERIFICATION",
-      notes: "",
-    });
   };
 
   // Toggle status of a transaction (e.g. from Pending to Reflected)

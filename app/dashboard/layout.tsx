@@ -15,7 +15,6 @@ import {
   Bot,
   ShieldOff,
   Landmark,
-  Building2,
   Mail
 } from "lucide-react";
 
@@ -150,7 +149,6 @@ export default function DashboardLayout({
     { name: "Calendar View", href: "/dashboard/calendar", icon: Calendar },
     { name: "Set Price", href: "/dashboard/set-price", icon: Coins },
     { name: "Settlements", href: "/dashboard/settlements", icon: Landmark },
-    { name: "Bank Transactions", href: "/dashboard/bank-transactions", icon: Building2 },
     { name: "Mail Center", href: "/dashboard/mail", icon: Mail },
   ];
 
